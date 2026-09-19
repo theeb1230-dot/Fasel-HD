@@ -9,7 +9,7 @@ Last updated: 2026-09-19
 - PR #5 exact head `053f2dc3b8d6b605d0c5f52650fb64a173419a3e` had Android CI run `35464781675` completed successfully and was mergeable.
 - PR #5 merged with exact-head protection. End/current main SHA: `82856723a67521e23ff29be6a005abc72f2bd962`.
 - Current single open PR: #6 `recovery/end-to-end-flow`.
-- PR #6 exact head before this documentation update: `fb477d23ba0a07151511e2b216ba74716fbbba7a`. GitHub reports mergeable; CI had not started/appeared yet when checked, so this PR is not counted as verified completion.
+- PR #6 advanced again this run: CI on prior head `b8907483d340b4a73be20c00d9d4916dcac45edf` reached successful Unit tests + Lint and was building the debug APK when inspected. The branch then added `PlaybackNavigator`; exact head before this documentation update is `0ce94b413034202e626a3d484ab3b94433c34978`, so the earlier in-progress CI is not evidence for the new head. GitHub reports mergeable; CI had not started/appeared yet when checked, so this PR is not counted as verified completion.
 
 ## Reference APK
 
@@ -28,13 +28,14 @@ Last updated: 2026-09-19
    - HTTPS watch pages returning ResolverRequired instead of pretending to be native media.
    - unsafe/no-safe-source failure closing.
    - native source preference over resolver fallback.
-5. No live provider, host access code, token, cookie, DRM/CAPTCHA/paywall bypass, or external-browser playback was added.
+5. Added `PlaybackNavigator` so only validated `PlaybackDecision.Native` values can create an internal `PlayerActivity` Intent; resolver/rejected decisions return no player Intent and do not open an external browser.
+6. No live provider, host access code, token, cookie, DRM/CAPTCHA/paywall bypass, or external-browser playback was added.
 
 ## Acceptance criteria / blockers
 
 ### P0
 - P0-1 PlayerActivity merged after exact-head green CI: CLOSED for the current slice; runtime device behavior remains unverified.
-- P0-2 deterministic Catalog/Search → Details/Episodes → Sources → playback decision: IMPLEMENTED IN PR #6, NOT VERIFIED until exact-head CI passes. UI navigation and actual Player launch remain open.
+- P0-2 deterministic Catalog/Search → Details/Episodes → Sources → playback decision + validated native decision → internal PlayerActivity Intent: IMPLEMENTED IN PR #6, NOT VERIFIED until CI passes on the newest exact head. Full screen-level Catalog/Search/Details navigation remains open.
 - P0-3 concrete authorized provider transport + pagination/error/loading/retry/cancellation/timeouts: OPEN.
 - P0-4 bounded internal resolver lifecycle: OPEN. Only the explicit ResolverRequired decision exists.
 - P0-5 Player UI/lifecycle: BUILD/CI VERIFIED, runtime/rotation/background/error/retry behavior still OPEN.
@@ -79,7 +80,7 @@ The score is recomputed from evidence on merged `main` only. PR #6 is intentiona
 
 - PR #5 Android CI run `35464781675`: completed success on exact head before merge.
 - Earlier CI produced non-zero Debug APK artifacts, but current main/PR #6 artifact metadata and runtime have not yet been re-inspected.
-- PR #6 CI: no workflow run visible at the first post-push check. Do not merge until exact-head checks are green.
+- PR #6 CI run `35468316747` on the previous head passed Unit tests and Lint and entered debug APK assembly. Because the branch advanced afterward, wait for CI on the newest exact head; do not merge based on the stale run.
 
 ## Security / licensing
 
@@ -91,7 +92,7 @@ The score is recomputed from evidence on merged `main` only. PR #6 is intentiona
 
 ## أهداف التشغيل التالي
 
-1. Inspect PR #6 exact-head CI; fix the first real failure from logs on the same branch and add regression coverage when appropriate.
+1. Inspect CI on the newest PR #6 exact head after `PlaybackNavigator`; fix the first real failure from logs on the same branch and add regression coverage when appropriate.
 2. When PR #6 exact-head CI is green and mergeable, merge it and recompute the weighted score from main.
 3. Add the next highest P0 slice: application/UI navigation from catalog/search selection through details/episodes and safe source selection into PlayerActivity.
 4. Implement an authorized/configurable provider transport boundary with explicit timeout/cancellation/error states, without embedding recovered credentials or bypass logic.
