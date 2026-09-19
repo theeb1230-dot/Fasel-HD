@@ -52,7 +52,7 @@ class PaginatedContentLoader(
             accumulated += result.items
             nextPage = result.page + 1
             state = if (accumulated.isEmpty()) State.Empty
-            else State.Content(accumulated.toList(), result.page, result.hasMore)
+            else State.Content(accumulated.toList(), result.page, result.hasNext)
             state
         } catch (cancelled: CancellationException) {
             state = if (accumulated.isEmpty()) State.Idle
