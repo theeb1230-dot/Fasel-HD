@@ -6,39 +6,36 @@ Last updated: 2026-09-19
 
 - Repository: `theeb1230-dot/Fasel-HD`
 - Default branch: `main`
-- Repository was empty at the beginning of this run.
-- Initial recovery bootstrap commit: `7823ea7f35015e7e8ffae95046613db9b812a503`.
-- The recovered source from prior local runs still needs to be migrated into this repository and validated by GitHub Actions.
+- Exact main SHA at run start: `1e8d3b1f657ce77f1f0a178bcba22e65eb7e21b0`.
+- Open PR: #1 on `recovery/android-ci-bootstrap`.
+- Previous PR head: `75ae81de4b578e3197df400f3b42f22ba4bd7398`.
+- CI workflow repair commit: `6eed3488a6fd8377d44679d866b687f3ef4373b1`.
 
 ## Reference APK
 
 - File: `FaselhdV20.0.2.apk`
-- Expected SHA-256: `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`
-- Do not commit the APK to this public repository.
+- Expected SHA-256: `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
+- The APK is not committed to this public repository.
 
-## Evidence recovered before repository bootstrap
+## Current recovery slice
 
-Previous clean-room analysis identified an Android-native application with multiple DEX files and evidence for Retrofit/OkHttp, Media3/ExoPlayer-style playback, catalog/search/details/episodes flows, and Fasel-specific resolver classes. The recovery work established a design for SafeHttp validation, typed provider routes/models, bounded WebView resolving, and native HLS/DASH/MP4 playback. These statements are migration inputs only until the corresponding source and tests are committed and CI verifies them here.
+PR #1 contains the Android/Kotlin scaffold, launcher, SafeHttp validation and tests, Media3 HLS/DASH playback dependencies, playback classification, and an Android CI gate for tests, lint, debug APK build, and artifact upload.
 
-## Security and provenance rules
+## CI evidence
 
-- Never commit recovered credentials, API tokens, signing secrets, or persistent cookies.
-- Do not bypass DRM, CAPTCHA, paywalls, or access controls.
-- Preserve third-party licenses/notices before importing or reimplementing affected components.
-- Prefer clean-room reimplementation from observed behavior/contracts rather than copying third-party decompiled code.
-- Keep resolver navigation bounded and fail closed for unsafe URL schemes and local/private network targets where applicable.
+Run `35437554979` failed before Gradle because the runner could not find the `sdkmanager` command. The workflow now uses the hosted runner Android SDK directly, verifies `ANDROID_HOME` and installed platform/build-tool directories, pins `ubuntu-24.04`, and uses checkout v5. The old failed SHA must not be treated as evidence for the repaired head.
 
-## Current blockers / gaps
+## Current gaps
 
-1. Recovered Android source tree has not yet been migrated to GitHub.
-2. No Gradle/Android GitHub Actions build has yet verified an APK from this repository.
-3. End-to-end Catalog/Search → Details → Episodes → Sources → Resolver → Player is therefore NOT VERIFIED.
-4. No release should be labeled stable/golden until build and runtime evidence exists.
+1. CI has not yet reached Gradle compilation/tests on the repaired exact head.
+2. No GitHub-built APK has been verified yet.
+3. Catalog/Search to Details/Episodes/Sources/Player remains unverified end-to-end.
+4. No stable release claim is justified yet.
 
 ## أهداف التشغيل التالي
 
-1. Migrate the recovered Android scaffold/source into a single recovery branch/PR.
-2. Add Gradle wrapper/project metadata and a GitHub Actions workflow that runs tests/lint and builds a debug APK.
-3. Verify SafeHttp, provider routing/models, resolver, and Media3 dependencies compile together.
-4. Fix CI failures at their root on the same PR and add regression tests.
-5. Inspect the produced APK artifact before making any runtime or release claim.
+1. Read Actions for the new exact PR head.
+2. Fix the first real compile/test/lint failure on PR #1 and add regression coverage where appropriate.
+3. Reach green `testDebugUnitTest`, `lintDebug`, and `assembleDebug` on one exact head.
+4. Inspect the produced debug APK artifact for structure, package/version, and manifest evidence.
+5. Merge PR #1 only after its exact head is green and mergeable, then start the typed catalog/search/details/episodes recovery slice.
