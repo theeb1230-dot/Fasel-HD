@@ -35,8 +35,12 @@ class ProviderGatewayTest {
         assertEquals(PlaybackKind.HLS, sources.single().kind)
     }
 
-    @Test(expected = IllegalArgumentException::class)
-    fun emptyIdIsRejected() = runBlocking {
-        ProviderGateway(provider).details(" ", MediaType.SERIES)
+    @Test fun emptyIdIsRejected() {
+        try {
+            runBlocking { ProviderGateway(provider).details(" ", MediaType.SERIES) }
+            fail("Expected IllegalArgumentException")
+        } catch (expected: IllegalArgumentException) {
+            assertEquals("id must not be empty", expected.message)
+        }
     }
 }
