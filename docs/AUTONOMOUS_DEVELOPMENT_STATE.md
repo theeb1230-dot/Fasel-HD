@@ -5,48 +5,95 @@ Last updated: 2026-09-19
 ## Repository truth
 
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Exact main SHA entering this run: `971493ffa756ae0bef9b361a849b6a3313263342`.
-- PR #1 Android/CI bootstrap, PR #2 provider/domain contracts, and PR #3 playback routing are merged.
-- Open PR: #4 `recovery/media3-player`.
-- PR #4 exact head entering this run: `8d5070a811f1134131aa3542bf2897b9331b96de`.
-- CI run `35455356289`: unit tests passed; lint failed because Media3 `setAllowCrossProtocolRedirects(false)` requires explicit `UnstableApi` opt-in. APK assembly was correctly skipped after lint failure.
-- Root cause fixed on the same branch with a narrow `@OptIn(UnstableApi::class)` on Media3 session creation, preserving cross-protocol redirect denial. Fix commit: `cea8cca45846068934984da2f5dbd79831af201e` before this documentation commit.
+- Start main SHA this run: `4766f9ce747683f67cf25cf30f30af8d9d968121`.
+- PR #5 exact head `053f2dc3b8d6b605d0c5f52650fb64a173419a3e` had Android CI run `35464781675` completed successfully and was mergeable.
+- PR #5 merged with exact-head protection. End/current main SHA: `82856723a67521e23ff29be6a005abc72f2bd962`.
+- Current single open PR: #6 `recovery/end-to-end-flow`.
+- PR #6 exact head before this documentation update: `fb477d23ba0a07151511e2b216ba74716fbbba7a`. GitHub reports mergeable; CI had not started/appeared yet when checked, so this PR is not counted as verified completion.
 
 ## Reference APK
 
 - File: `FaselhdV20.0.2.apk`.
 - Expected SHA-256: `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
-- The reference APK is intentionally not committed to this public repository.
+- Reference APK is not committed. No secret recovered from it may be committed.
 
-## Verified build evidence
+## Work completed this run
 
-- PR #1 exact head `5a4d623710da17030899f33771b14085a86c224a` passed tests/lint/assemble and produced non-zero artifact `fasel-hd-debug-apk` (7,078,953 bytes), digest `sha256:b99731125a55c429678036f098114d23c179d0fc2002382edbfcca2d0e7d6e6b`.
-- Later merged recovery slices have also passed the same CI gates before merge. Build success proves the clean-room source compiles; it does not prove runtime parity with the reference APK.
+1. Closed P0-1: merged the lifecycle-safe native Player surface after exact-head green CI.
+2. Started P0-2 on one new PR only.
+3. Added `ContentFlow`, an application-level boundary connecting Catalog/Search → Details → Sources → playback decision without coupling UI to a provider implementation.
+4. Added deterministic clean-room integration-style unit coverage for:
+   - Catalog → Details → Season/Episode → HLS native playback decision.
+   - Search → direct MP4 playback decision.
+   - HTTPS watch pages returning ResolverRequired instead of pretending to be native media.
+   - unsafe/no-safe-source failure closing.
+   - native source preference over resolver fallback.
+5. No live provider, host access code, token, cookie, DRM/CAPTCHA/paywall bypass, or external-browser playback was added.
 
-## Recovered architecture currently in source
+## Acceptance criteria / blockers
 
-- Typed domain models for Movie/Series/Anime/Stream, details, episodes, and pagination.
-- `ContentProvider` + `ProviderGateway` with normalized input and fail-closed URL filtering.
-- Clean-room mapping for observed response fields such as `poster_path`, `backdrop_path`, `tmdb_id`, `imdb_id`, `season_number`, and `episode_number`.
-- Playback routing separates native HLS/DASH/direct media from resolver-required HTTPS pages and rejects unsafe/private schemes/hosts.
-- PR #4 adds ephemeral `PlaybackRequest` headers with an allowlist and native Media3 ExoPlayer construction for already-resolved sources. Cross-protocol redirects remain disabled. No persistent cookies or credentials are introduced.
+### P0
+- P0-1 PlayerActivity merged after exact-head green CI: CLOSED for the current slice; runtime device behavior remains unverified.
+- P0-2 deterministic Catalog/Search → Details/Episodes → Sources → playback decision: IMPLEMENTED IN PR #6, NOT VERIFIED until exact-head CI passes. UI navigation and actual Player launch remain open.
+- P0-3 concrete authorized provider transport + pagination/error/loading/retry/cancellation/timeouts: OPEN.
+- P0-4 bounded internal resolver lifecycle: OPEN. Only the explicit ResolverRequired decision exists.
+- P0-5 Player UI/lifecycle: BUILD/CI VERIFIED, runtime/rotation/background/error/retry behavior still OPEN.
+- P0-6 APK metadata inspection + runtime smoke: OPEN.
 
-## Functional gaps
+### P1
+Movies/Series/Anime/Streaming full flows, Favorites/History/Resume, Downloads, Settings/Profiles, and reference UI/RTL parity remain OPEN.
 
-Still unverified/incomplete: concrete authorized provider transport, Catalog/Search UI and repository flow, Details/Seasons/Episodes UI, bounded internal resolver lifecycle, Player Activity/View lifecycle, downloads, favorites, history, settings, runtime device smoke, and behavioral parity against the reference APK. No Stable/Golden/release claim is justified yet.
+### P2
+Further SSRF/DNS-rebinding hardening, performance, dependencies, accessibility, licensing audit and maintenance remain OPEN.
+
+## Honest weighted completion
+
+The score is recomputed from evidence on merged `main` only. PR #6 is intentionally not credited until CI verifies its exact head.
+
+| Area | Weight | Evidence-level completion |
+|---|---:|---:|
+| Build/Gradle/CI + Debug APK | 8% | 90% |
+| Architecture/domain/models/contracts | 8% | 75% |
+| Catalog/Home | 7% | 30% |
+| Search | 7% | 30% |
+| Details | 7% | 30% |
+| Seasons/Episodes | 7% | 30% |
+| Sources/provider/pagination | 8% | 55% |
+| Resolver | 7% | 30% |
+| Native Media3 Player + UI/lifecycle | 10% | 75% |
+| End-to-end Catalog/Search→Play | 10% | 0% verified on main |
+| Movies/Series/Anime/Streaming | 5% | 30% |
+| Favorites/History/Resume | 4% | 0% |
+| Downloads | 3% | 0% |
+| Settings/Profiles | 3% | 0% |
+| UI/navigation/Arabic-RTL/reference parity | 3% | 5% |
+| Runtime/device smoke + edge cases | 2% | 0% |
+| Security/privacy/licenses/dependencies | 1% | 55% |
+
+- **Overall Verified Product Completion: 37.9%**.
+- **Current P0 Path Completion: 35.0%**. This is deliberately conservative because the deterministic E2E slice is not CI-verified yet and no concrete authorized provider transport/UI navigation exists.
+- **Runtime-Verified Completion: 0.0%** for device/emulator runtime evidence. Build/CI evidence exists, but it is not mislabeled as runtime proof.
+- Reason for score change: the prior informal ~35% estimate was replaced by the fixed weighted rubric. PR #5 is now merged and CI-verified; PR #6 receives no verified credit until its exact-head checks pass.
+
+## CI / artifacts
+
+- PR #5 Android CI run `35464781675`: completed success on exact head before merge.
+- Earlier CI produced non-zero Debug APK artifacts, but current main/PR #6 artifact metadata and runtime have not yet been re-inspected.
+- PR #6 CI: no workflow run visible at the first post-push check. Do not merge until exact-head checks are green.
 
 ## Security / licensing
 
-- No recovered host access code, API credential, token, signing secret, or persistent cookie may enter source, tests, logs, or docs.
-- Decompiled third-party implementation code is not copied without compatible rights; behavior/contracts are reimplemented clean-room.
-- DRM/CAPTCHA/paywall/access-control bypass remains out of scope.
-- `SafeHttp` and playback boundaries remain fail-closed.
+- Clean-room implementation only.
+- No recovered credentials, API tokens, signing secrets or persistent cookies.
+- No DRM/CAPTCHA/paywall/access-control bypass.
+- Native Media3 remains first choice; resolver is an explicit bounded future path.
+- Player Activity is non-exported and playback requests are revalidated.
 
 ## أهداف التشغيل التالي
 
-1. Verify CI on the exact new PR #4 head; inspect any compile/test/lint/assemble failure and fix it on this branch.
-2. Merge PR #4 only after exact-head CI is green and the PR is mergeable, then re-read `main`.
-3. Open one next PR for a real Player Activity/View lifecycle around Media3, including deterministic lifecycle tests where practical.
-4. Build deterministic Catalog/Search → Details/Episodes → Sources integration with clean-room fixtures so the complete application path can be exercised without unauthorized live endpoints.
-5. Add the bounded internal resolver only where evidence requires it, with timeout/cancellation/navigation restrictions and no access-control bypass.
-6. Continue APK artifact inspection and runtime smoke before any release claim.
+1. Inspect PR #6 exact-head CI; fix the first real failure from logs on the same branch and add regression coverage when appropriate.
+2. When PR #6 exact-head CI is green and mergeable, merge it and recompute the weighted score from main.
+3. Add the next highest P0 slice: application/UI navigation from catalog/search selection through details/episodes and safe source selection into PlayerActivity.
+4. Implement an authorized/configurable provider transport boundary with explicit timeout/cancellation/error states, without embedding recovered credentials or bypass logic.
+5. Add bounded resolver lifecycle only for ResolverRequired sources and keep native HLS/DASH/MP4 first.
+6. Download/inspect a fresh CI APK for package/version/manifest/placeholders, then pursue emulator/device runtime smoke when available.
