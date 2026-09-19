@@ -4,10 +4,10 @@ Last updated: 2026-09-20
 
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Run-start main SHA: `82856723a67521e23ff29be6a005abc72f2bd962`.
-- PR #6 exact head `490d4fed28c0120df366efacdf75a073ad9790a5` passed Android CI run `35470570450`: unit tests, lint, debug APK build and artifact upload all SUCCESS.
-- PR #6 was squash-merged with exact-head protection. Current main SHA: `c8dc2f5a234d1e7aaf2aa4677be302692b07b217`.
-- Single open PR: #7 `recovery/functional-ui-flow`; code head before this documentation commit: `98917976454583cbd5ed96d53fb88147a478936b`. CI evidence for #7 is pending and is not credited as verified completion.
+- Run-start main SHA: `c8dc2f5a234d1e7aaf2aa4677be302692b07b217`.
+- PR #7 exact head `a603e16701601af72f811503e7855e58de42cd22` was mergeable and Android CI run `35472195274` completed SUCCESS: unit tests, lint, debug APK build, artifact upload.
+- PR #7 was squash-merged with exact-head protection. Current main SHA: `fbf9a51f4eb002bc8d81180fbe16079e786fb04a`.
+- Single open PR: #8 `recovery/provider-transport`; code/test head before this documentation commit: `59cde2cf9eac8d3b53f5cce69c3f6b71b6190f3e`. CI for #8 is not yet credited.
 
 ## Reference APK
 - File: `FaselhdV20.0.2.apk`.
@@ -15,39 +15,39 @@ Last updated: 2026-09-20
 - Reference APK is not committed; no recovered secrets may enter source/logs/tests/docs.
 
 ## Work completed this run
-1. Closed P0-1 by verifying the newest PR #6 exact head and merging it only after all exact-head CI gates passed.
-2. Re-read main and confirmed the launcher remained a placeholder shell: `MainActivity` only inflated `activity_main`, whose only visible content was `Fasel HD Recovery`.
-3. Opened exactly one next PR (#7) from the merged main.
-4. Replaced the placeholder layout with an actual discovery surface: search input, Catalog/Search actions, loading/status state, result list, details/episode text, and Play action.
-5. Wired `MainActivity` through the merged `ContentFlow` and `PlaybackNavigator`: Catalog/Search -> selection -> Details/Episodes -> Sources -> playback decision -> internal `PlayerActivity` for Native decisions. ResolverRequired and Rejected remain explicit non-launch states.
-6. Added lifecycle coroutine support. The UI uses a deterministic clean-room provider and public HLS fixture only to exercise the recovered user path; this is deliberately NOT counted as concrete live-provider restoration.
+1. Closed P0-1 for PR #7: verified exact-head CI and merged the functional UI flow.
+2. Re-read merged `MainActivity`: Catalog/Search, loading/error/empty status, results, Details/Episodes and Play now exist and route Native decisions internally to PlayerActivity. The provider is still explicitly `DemoProvider`, so live-provider restoration is NOT claimed.
+3. Opened exactly one next PR (#8) for P0-3.
+4. Added `ProviderTransport`, a credential-free OkHttp boundary with bounded connect/read/call timeouts, redirects disabled, SafeHttp validation, coroutine cancellation propagation, and explicit Success/HttpError/NetworkError/Rejected states.
+5. Added policy regression tests proving private/script/file endpoints are rejected and a public HTTPS endpoint shape is accepted.
+6. No recovered host, credential, token, cookie, access-control bypass, ad/tracking path or external-browser playback was added.
 
 ## Acceptance criteria / blockers
 ### P0
-- P0-1 current integration PR: CLOSED and merged at `c8dc2f5...`; PR #7 is now the only open PR.
-- P0-2 application integration: VERIFIED on merged main. Screen-level functional flow: IMPLEMENTED on PR #7 but UNVERIFIED until exact-head CI passes; runtime remains unverified.
-- P0-3 concrete authorized/configurable provider transport with pagination/loading/error/retry/cancellation/timeouts: OPEN.
-- P0-4 bounded internal resolver lifecycle: OPEN; ResolverRequired decision exists but no resolver implementation is credited.
-- P0-5 Player UI/lifecycle: CI VERIFIED on main; runtime/rotation/background/error/retry behavior OPEN.
-- P0-6 APK structure: prior non-zero artifact verified; decoded package/version manifest and emulator/device runtime smoke OPEN.
+- P0-1 current PR rule: #7 CLOSED/MERGED; #8 is the only open PR.
+- P0-2 deterministic Catalog/Search -> Details/Episodes -> Sources -> playback decision -> internal Native Player path: BUILD/CI VERIFIED on main; device runtime remains OPEN.
+- P0-3 provider transport: bounded transport boundary IMPLEMENTED in #8 but UNVERIFIED until newest exact-head CI. Concrete authorized provider adapter, response parsing, pagination integration and retry policy remain OPEN.
+- P0-4 bounded internal resolver: OPEN; only ResolverRequired decision exists.
+- P0-5 Player: build/CI verified; runtime error/retry/rotation/background behavior OPEN.
+- P0-6 APK/runtime: CI builds APK; fresh metadata/device smoke remains OPEN.
 
 ### P1
-Movies/Series/Anime/Streaming complete user flows, Favorites/History/Resume, Downloads, Settings/Profiles, Arabic/RTL/reference parity remain OPEN.
+Movies/Series/Anime/Streaming complete live flows, Favorites/History/Resume, Downloads, Settings/Profiles, and full Arabic/RTL/reference parity remain OPEN.
 
 ### P2
-Further SSRF/DNS-rebinding hardening, performance, dependency/security/license audit, accessibility and maintenance remain OPEN.
+DNS-rebinding/IPv6 SSRF hardening, performance, dependency/security/license audit, accessibility and maintenance remain OPEN.
 
 ## Honest weighted completion
-Only merged/exact-head CI-verified evidence is credited below. PR #7 UI work receives zero additional verified credit until its exact head passes CI.
+Scores are recomputed from merged/exact-head CI evidence only. #8 receives no completion credit yet.
 
 | Area | Weight | Evidence-level completion |
 |---|---:|---:|
 | Build/Gradle/CI + valid Debug APK | 8% | 90% |
 | Architecture/domain/models/contracts | 8% | 75% |
-| Catalog/Home | 7% | 30% |
-| Search | 7% | 30% |
-| Details | 7% | 30% |
-| Seasons/Episodes | 7% | 30% |
+| Catalog/Home | 7% | 55% |
+| Search | 7% | 55% |
+| Details | 7% | 55% |
+| Seasons/Episodes | 7% | 55% |
 | Sources/provider/pagination | 8% | 55% |
 | Resolver | 7% | 30% |
 | Native Media3 Player + UI/lifecycle | 10% | 75% |
@@ -56,29 +56,29 @@ Only merged/exact-head CI-verified evidence is credited below. PR #7 UI work rec
 | Favorites/History/Resume | 4% | 0% |
 | Downloads | 3% | 0% |
 | Settings/Profiles | 3% | 0% |
-| UI/navigation/Arabic-RTL/reference parity | 3% | 5% |
+| UI/navigation/Arabic-RTL/reference parity | 3% | 30% |
 | Runtime/device smoke + edge cases | 2% | 0% |
 | Security/privacy/licenses/dependencies | 1% | 55% |
 
-- **Overall Verified Product Completion: 45.4%**.
-- **Current P0 Path Completion: 52.0%**.
+- **Overall Verified Product Completion: 53.1%**.
+- **Current P0 Path Completion: 61.0%**.
 - **Runtime-Verified Completion: 0.0%**.
-- The score does not rise merely because PR #7 contains new UI code. It may rise only after exact-head CI/integration evidence; runtime remains zero until emulator/device evidence exists.
+- Increase from the previous verified score is due to PR #7 now being exact-head CI verified and merged, not merely because UI files exist. Runtime remains zero because no emulator/device evidence exists.
 
 ## CI / artifacts
-- PR #6 exact-head Android CI run `35470570450`: SUCCESS across unit tests, lint, debug APK and artifact upload.
-- PR #7 CI: pending after code push; do not merge until the newest exact head is green and mergeable.
-- Prior verified APK evidence remains valid only for the prior exact build; a fresh #7 artifact must be inspected after CI.
+- PR #7 Android CI run `35472195274`: SUCCESS across unit tests, lint, debug APK and artifact upload on exact head `a603e167...`.
+- PR #8 CI: pending/not yet credited after initial code/test push.
+- Build evidence is not treated as runtime evidence.
 
 ## Security / licensing
 - Clean-room implementation only; no credentials/API tokens/signing secrets/persistent cookies.
 - No DRM/CAPTCHA/paywall/access-control bypass, ads/tracking, or external-browser playback.
-- Native Media3 first; PlayerActivity remains internal/non-exported and playback inputs are revalidated.
+- Provider transport validates endpoints before requests, disables redirects and bounds timeouts. Further DNS-resolution/IPv6 rebinding hardening remains a known P2 gap.
 
 ## أهداف التشغيل التالي
-1. Inspect PR #7 exact-head CI. If it fails, read the job logs, fix the root cause on the same branch and add regression coverage where practical.
-2. Merge #7 only when the newest exact head is green and mergeable, then recompute all weighted percentages from main.
-3. Replace the deterministic provider with an authorized/configurable transport boundary including timeout/cancellation/loading/error/retry and pagination while keeping fixtures for deterministic tests.
-4. Implement the bounded internal resolver only for `ResolverRequired`, with HTTPS/SafeHttp/timeouts/cancellation/lifecycle restrictions and no access-control bypass.
-5. Add player error/retry/background/rotation coverage and fresh APK metadata inspection.
-6. Obtain emulator/device runtime smoke evidence before increasing Runtime-Verified Completion or making any Stable/Golden claim.
+1. Inspect PR #8 newest exact-head CI; fix real failures from logs on the same branch and add regression coverage where appropriate.
+2. Merge #8 only after newest exact-head CI is green and mergeable, then recompute from main.
+3. Add an authorized/configurable provider adapter and clean-room response parsing/pagination integration; preserve deterministic fixtures for tests and never embed recovered credentials.
+4. Add explicit retry/loading/error/cancellation behavior at the repository/UI boundary.
+5. Implement bounded internal resolver only for ResolverRequired with SafeHttp/timeouts/cancellation/lifecycle restrictions and no bypass.
+6. Add player error/retry/background/rotation coverage and fresh APK metadata/runtime smoke before any runtime or Stable/Golden claim.
