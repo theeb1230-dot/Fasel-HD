@@ -9,7 +9,9 @@ Last updated: 2026-09-19
 - Exact main SHA at this run: `4f54bba945407d45dc0fb867d9b4be277c278bd6`.
 - PR #1 was merged after exact-head CI passed unit tests, lint, debug APK assembly, and artifact upload.
 - Open PR: #2 `recovery/provider-domain-model`.
-- PR #2 head after this run's development: `ef89cd1710491ccb850838b303504efff5232392` before this documentation commit.
+- PR #2 exact head entering this run: `12b764faab2c9015ff06582315bbf2931c11a10b`.
+- CI run `35445941365` compiled production and test Kotlin but failed `testDebugUnitTest`: JUnit4 reported `ProviderGatewayTest > initializationError` because an `@Test(expected=...)` method returned the non-Unit value of `runBlocking`.
+- Root cause fixed on the same branch by making the exception regression test a normal Unit-returning JUnit4 test and asserting the thrown `IllegalArgumentException` explicitly. Fix commit: `65312f40b1f956add165ae3bc4e30ca4cd713c9c` before this documentation commit.
 
 ## Reference APK
 
@@ -32,13 +34,13 @@ PR #2 restores typed provider/domain boundaries:
 - `ProviderGateway` normalization and fail-closed source filtering through `SafeHttp`.
 - Clean-room DTO/mapper boundary for observed response field names including `poster_path`, `backdrop_path`, `tmdb_id`, `imdb_id`, `season_number`, and `episode_number`.
 - Pagination mapping supports page/current_page/last_page/next_page_url without trusting an unsafe next URL.
-- Regression tests cover blank search, page normalization, unsafe playback sources, incomplete episodes, unsafe artwork URLs, and unsafe pagination URLs.
+- Regression tests cover blank search, page normalization, unsafe playback sources, incomplete episodes, unsafe artwork URLs, unsafe pagination URLs, and empty IDs.
 
 No recovered host, access code, credential, token, signing secret, or persistent cookie is committed.
 
 ## Functional progress / remaining gaps
 
-Verified: Android project + CI build gate + typed domain/provider boundary + URL security boundary.
+Verified: Android project + prior green CI build gate + typed domain/provider boundary + URL security boundary. PR #2 still requires green exact-head CI after the JUnit regression fix before merge.
 
 Still unverified: concrete authorized provider transport, Catalog/Search UI/data flow, Details, Seasons/Episodes, source resolution, Media3 Player Activity/session wiring, downloads, favorites, history, settings, runtime smoke, and behavioral parity against the reference APK. Therefore no Stable/Golden or release claim is justified.
 
@@ -50,8 +52,8 @@ Still unverified: concrete authorized provider transport, Catalog/Search UI/data
 
 ## أهداف التشغيل التالي
 
-1. Read CI for the exact PR #2 head and fix any compile/test/lint failure on the same branch.
-2. Merge PR #2 only when its exact head is green and mergeable.
-3. Start one next PR only after merge, targeting a concrete provider transport abstraction plus repository/use-case flow from catalog/search to details/episodes without embedding secrets or an unauthorized host.
-4. Wire playback source selection into a native Media3 player session with temporary request headers and SafeHttp validation.
-5. Add integration tests that exercise Catalog/Search → Details/Episodes → Sources using deterministic clean-room fixtures before connecting any live authorized provider.
+1. Verify CI on the new exact PR #2 head; inspect logs and fix any remaining compile/test/lint/assemble failure on this branch.
+2. Merge PR #2 only when its exact head is green and mergeable, then re-read `main`.
+3. Open only one next PR for deterministic Catalog/Search → Details/Episodes → Sources repository/use-case integration using clean-room fixtures.
+4. Wire selected safe playback sources into native Media3 session construction with ephemeral request headers, without persistent secrets.
+5. Inspect the resulting APK artifact metadata and advance runtime smoke when the environment permits.
