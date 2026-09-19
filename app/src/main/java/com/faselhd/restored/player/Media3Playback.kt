@@ -1,12 +1,15 @@
 package com.faselhd.restored.player
 
 import android.content.Context
+import androidx.annotation.OptIn
 import androidx.media3.common.MediaItem
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
 
 /** Native-first Media3 session for already-resolved HLS/DASH/direct sources. */
 class Media3Playback(private val context: Context) {
+    @OptIn(UnstableApi::class)
     fun create(request: PlaybackRequest): ExoPlayer {
         val httpFactory = DefaultHttpDataSource.Factory()
             .setAllowCrossProtocolRedirects(false)
