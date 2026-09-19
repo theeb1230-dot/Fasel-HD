@@ -3,11 +3,9 @@ package com.faselhd.restored.provider
 import com.faselhd.restored.domain.MediaDetails
 import com.faselhd.restored.domain.MediaSummary
 import com.faselhd.restored.domain.MediaType
-import com.faselhd.restored.domain.Page
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
-import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.*
@@ -62,7 +60,9 @@ class ConfiguredContentProviderTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun blankSearchIsRejectedBeforeTransport() = runBlocking {
-        provider("{}").search("   ", 1)
+    fun blankSearchIsRejectedBeforeTransport() {
+        runBlocking {
+            provider("{}").search("   ", 1)
+        }
     }
 }
