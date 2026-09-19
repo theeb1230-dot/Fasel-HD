@@ -9,7 +9,7 @@ Last updated: 2026-09-19
 - PR #5 exact head `053f2dc3b8d6b605d0c5f52650fb64a173419a3e` had Android CI run `35464781675` completed successfully and was mergeable.
 - PR #5 merged with exact-head protection. End/current main SHA: `82856723a67521e23ff29be6a005abc72f2bd962`.
 - Current single open PR: #6 `recovery/end-to-end-flow`.
-- PR #6 advanced again this run: CI on prior head `b8907483d340b4a73be20c00d9d4916dcac45edf` reached successful Unit tests + Lint and was building the debug APK when inspected. The branch then added `PlaybackNavigator`; exact head before this documentation update is `0ce94b413034202e626a3d484ab3b94433c34978`, so the earlier in-progress CI is not evidence for the new head. GitHub reports mergeable; CI had not started/appeared yet when checked, so this PR is not counted as verified completion.
+- PR #6 advanced again this run: CI on prior head `b8907483d340b4a73be20c00d9d4916dcac45edf` reached successful Unit tests + Lint and was building the debug APK when inspected. The branch then added `PlaybackNavigator`; the navigation boundary now also has pure JVM regression coverage. Exact code/test head before this documentation update is `34a7dd3ef6c2bf18e7c7aa23eeda98231debe087`, so the earlier in-progress CI is not evidence for the new head. GitHub reports mergeable; CI had not started/appeared yet when checked, so this PR is not counted as verified completion.
 
 ## Reference APK
 
@@ -29,7 +29,8 @@ Last updated: 2026-09-19
    - unsafe/no-safe-source failure closing.
    - native source preference over resolver fallback.
 5. Added `PlaybackNavigator` so only validated `PlaybackDecision.Native` values can create an internal `PlayerActivity` Intent; resolver/rejected decisions return no player Intent and do not open an external browser.
-6. No live provider, host access code, token, cookie, DRM/CAPTCHA/paywall bypass, or external-browser playback was added.
+6. Added `PlaybackNavigatorTest` using a pure `PlayerLaunch` plan so Native decisions are covered without brittle Android mocks; ResolverRequired/Rejected are asserted to produce no launch.
+7. No live provider, host access code, token, cookie, DRM/CAPTCHA/paywall bypass, or external-browser playback was added.
 
 ## Acceptance criteria / blockers
 
@@ -80,7 +81,7 @@ The score is recomputed from evidence on merged `main` only. PR #6 is intentiona
 
 - PR #5 Android CI run `35464781675`: completed success on exact head before merge.
 - Earlier CI produced non-zero Debug APK artifacts, but current main/PR #6 artifact metadata and runtime have not yet been re-inspected.
-- PR #6 CI run `35468316747` on the previous head passed Unit tests and Lint and entered debug APK assembly. Because the branch advanced afterward, wait for CI on the newest exact head; do not merge based on the stale run.
+- PR #6 CI run `35468396498` on prior head `39e8ff...` passed Unit tests and had entered Lint when the branch advanced. A newer exact-head CI is required. Because the branch advanced afterward, wait for CI on the newest exact head; do not merge based on the stale run.
 
 ## Security / licensing
 
