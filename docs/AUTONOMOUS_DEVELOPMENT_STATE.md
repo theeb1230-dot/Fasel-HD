@@ -4,10 +4,10 @@ Last updated: 2026-09-20
 
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Run-start main SHA: `fbf9a51f4eb002bc8d81180fbe16079e786fb04a`.
-- PR #8 exact head `42413aaf27815b7da44361a50271f4610ee4ca32` was mergeable and Android CI run `35472913450` completed SUCCESS.
-- PR #8 was squash-merged with exact-head protection. Current main SHA: `913225e7b0ae8ee24075d060c2ff07afa5a4d3d0`.
-- Single open PR: #9 `recovery/provider-json-adapter`; code/test head before this documentation commit: `1bccc1e7c319dc37e70caa6ecfe0238c0c504d28`. #9 is not credited until newest exact-head CI passes.
+- Run-start main SHA: `e39a585229ef4db2585c483aa0422b6a9a1779dc`.
+- PR #11 exact head `cf65554273ec2b83c069ddcf6fb648056cc254e3` was mergeable and Android CI run `35474368205` completed SUCCESS.
+- PR #11 was squash-merged with exact-head protection. Current/end main SHA: `5a76b88d171037c80c4cb5ed357d7f5742a63c05`.
+- Single open PR: #12 `recovery/provider-adapter-tests`; code/test head before this documentation commit: `8e690cdcf31613feceaab7c56db1a077993ebb6b`. Do not credit #12 until CI passes its newest exact head.
 
 ## Reference APK
 - File: `FaselhdV20.0.2.apk`.
@@ -15,19 +15,18 @@ Last updated: 2026-09-20
 - Reference APK is not committed; no recovered secrets may enter source/logs/tests/docs.
 
 ## Work completed this run
-1. Closed P0-1 for PR #8: verified exact-head Android CI SUCCESS and merged bounded provider transport.
-2. Re-read merged `ProviderTransport`: public endpoint requests pass through SafeHttp, redirects are disabled, connect/read/call timeouts are bounded, cancellation propagates, and transport exposes explicit Success/HttpError/NetworkError/Rejected states.
-3. Opened exactly one next PR (#9) continuing P0-3.
-4. Added `ProviderJsonAdapter` for the already-observed clean-room media pagination and episode fields. It contains no host, token, cookie, credential or access code.
-5. Added fail-closed decoding for malformed JSON and a 2,000,000-character payload ceiling before parsing.
-6. Added regression tests for media pagination fields, episode fields, malformed JSON and oversized payloads.
-7. No DRM/CAPTCHA/paywall/access-control bypass, ads/tracking or external-browser playback was added.
+1. Closed P0-1 for PR #11: exact-head Android CI SUCCESS and mergeability verified, then merged.
+2. Re-read merged provider adapter: Catalog/Search now route through `ProviderPageLoader`; endpoint construction, details and sources remain injected and credential-free.
+3. Opened exactly one next PR (#12) on current main.
+4. Added deterministic integration-style regression coverage across `ConfiguredContentProvider -> ProviderPageLoader -> ProviderTransport -> ProviderJsonAdapter -> RecoveredContractMapper`.
+5. Tests cover pagination mapping, malformed-payload non-retryability, HTTP 503 retryability, and blank-search fail-fast behavior using an in-memory OkHttp interceptor only.
+6. No recovered host/token/cookie/credential, access bypass, ads/tracking or external-browser playback was added.
 
 ## Acceptance criteria / blockers
 ### P0
-- P0-1 current PR rule: #8 CLOSED/MERGED; #9 is the only open PR.
+- P0-1: #11 CLOSED/MERGED; #12 is the only open PR.
 - P0-2 deterministic Catalog/Search -> Details/Episodes -> Sources -> playback decision -> internal Native Player path: BUILD/CI VERIFIED on main; device runtime remains OPEN.
-- P0-3 bounded provider transport: MERGED/CI VERIFIED. Response adapter: IMPLEMENTED in #9 but UNVERIFIED until newest exact-head CI. Concrete authorized provider configuration, transport+decode integration, pagination execution, retry/loading/error/cancellation UI behavior remain OPEN.
+- P0-3 provider transport + decode + mapping + ContentProvider adapter: MERGED/CI VERIFIED through #11. Cross-layer deterministic integration tests are in #12 and remain UNVERIFIED until exact-head CI. Authorized concrete configuration, UI pagination/loading/retry/cancellation remain OPEN.
 - P0-4 bounded internal resolver: OPEN; only ResolverRequired decision exists.
 - P0-5 Player: build/CI verified; runtime error/retry/rotation/background behavior OPEN.
 - P0-6 APK/runtime: CI builds APK; fresh metadata/device smoke remains OPEN.
@@ -39,7 +38,7 @@ Movies/Series/Anime/Streaming complete live flows, Favorites/History/Resume, Dow
 DNS-rebinding/IPv6 SSRF hardening, performance, dependency/security/license audit, accessibility and maintenance remain OPEN.
 
 ## Honest weighted completion
-Scores are recomputed from merged/exact-head CI evidence only. PR #9 receives no completion credit yet. PR #8 strengthens P0-3 evidence but does not by itself justify moving Sources/provider/pagination above the rubric's implementation+unit-test ceiling because no concrete provider is integrated end-to-end.
+Scores are recomputed from merged/exact-head CI evidence only. #12 is not credited before CI. #11 strengthens P0-3 but the concrete authorized configuration and UI pagination behavior remain absent, so the provider band stays at the implementation/test ceiling for now.
 
 | Area | Weight | Evidence-level completion |
 |---|---:|---:|
@@ -64,24 +63,23 @@ Scores are recomputed from merged/exact-head CI evidence only. PR #9 receives no
 - **Overall Verified Product Completion: 53.1%**.
 - **Current P0 Path Completion: 61.0%**.
 - **Runtime-Verified Completion: 0.0%**.
-- Score deliberately remains unchanged: PR #8 is real verified progress, but the fixed rubric caps implementation+unit-test evidence and the concrete provider is still absent. Runtime remains zero because no emulator/device evidence exists.
+- Score remains unchanged pending #12 exact-head CI and because no authorized concrete endpoint/UI pagination runtime exists yet.
 
 ## CI / artifacts
-- PR #8 Android CI run `35472913450`: SUCCESS on exact head `42413aaf...`; merged to main `913225e7...`.
-- PR #9 CI: not yet credited on the newest exact head.
-- Build evidence is not treated as runtime evidence.
+- PR #11 Android CI run `35474368205`: SUCCESS on exact head `cf655542...`; merged to main `5a76b88d...`.
+- PR #12: newest exact-head CI not yet credited.
+- Build evidence is not runtime evidence.
 
 ## Security / licensing
 - Clean-room implementation only; no credentials/API tokens/signing secrets/persistent cookies.
 - No DRM/CAPTCHA/paywall/access-control bypass, ads/tracking, or external-browser playback.
-- Provider transport validates endpoints before requests, disables redirects and bounds timeouts.
-- JSON adapter caps payload size and fails closed on malformed data.
+- Provider transport validates endpoints, disables redirects and bounds timeouts.
+- Provider decode caps payload size and fails closed on malformed data.
 - Further DNS-resolution/IPv6 rebinding hardening remains a known P2 gap.
 
 ## أهداف التشغيل التالي
-1. Inspect PR #9 newest exact-head CI; fix real failures from logs on the same branch and add regression coverage where appropriate.
-2. Merge #9 only after newest exact-head CI is green and mergeable, then recompute from main.
-3. Integrate authorized/configurable provider configuration with ProviderTransport + ProviderJsonAdapter + RecoveredContractMapper; preserve deterministic fixtures and never embed recovered credentials.
-4. Add pagination execution and explicit retry/loading/error/cancellation behavior at repository/UI boundaries.
-5. Implement bounded internal resolver only for ResolverRequired with SafeHttp/timeouts/cancellation/lifecycle restrictions and no bypass.
-6. Add player error/retry/background/rotation coverage and fresh APK metadata/runtime smoke before any runtime or Stable/Golden claim.
+1. Inspect PR #12 newest exact-head CI; fix any real failure on the same branch with regression coverage.
+2. Merge #12 only after newest exact-head CI is green and mergeable, then recompute from main.
+3. Add UI/repository pagination state with explicit loading/empty/error/retry/cancellation around the authorized configurable provider boundary.
+4. Implement bounded internal resolver only for ResolverRequired with SafeHttp/timeouts/cancellation/lifecycle restrictions and no bypass.
+5. Add player error/retry/background/rotation coverage and fresh APK metadata/runtime smoke before any runtime or Stable/Golden claim.
