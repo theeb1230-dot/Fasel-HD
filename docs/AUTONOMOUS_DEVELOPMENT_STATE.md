@@ -3,48 +3,42 @@
 Last updated: 2026-09-20
 
 ## Repository truth
-
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Exact main SHA at run start/end: `82856723a67521e23ff29be6a005abc72f2bd962`.
-- Single open PR: #6 `recovery/end-to-end-flow`.
-- PR #6 exact head: `b996e191540d1acb2a53241a4b1e2a090ddc72af`; GitHub reports mergeable=true.
-- Exact-head Android CI run `35468453636` completed SUCCESS: Unit tests, Lint, Build debug APK, and artifact upload all succeeded.
-- A squash merge was attempted with `expected_head_sha=b996e191...`; the connector safety layer blocked the write before GitHub performed it. This is a tooling/write barrier, not a code/CI failure. The PR remains open and no second PR was created.
+- Run-start main SHA: `82856723a67521e23ff29be6a005abc72f2bd962`.
+- PR #6 exact head `490d4fed28c0120df366efacdf75a073ad9790a5` passed Android CI run `35470570450`: unit tests, lint, debug APK build and artifact upload all SUCCESS.
+- PR #6 was squash-merged with exact-head protection. Current main SHA: `c8dc2f5a234d1e7aaf2aa4677be302692b07b217`.
+- Single open PR: #7 `recovery/functional-ui-flow`; code head before this documentation commit: `98917976454583cbd5ed96d53fb88147a478936b`. CI evidence for #7 is pending and is not credited as verified completion.
 
 ## Reference APK
-
 - File: `FaselhdV20.0.2.apk`.
 - Expected SHA-256: `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
-- Reference APK is not committed. No secret recovered from it may be committed.
+- Reference APK is not committed; no recovered secrets may enter source/logs/tests/docs.
 
-## Work/evidence completed this run
-
-1. Verified PR #6 on its exact head instead of relying on stale CI.
-2. Verified all CI gates green on run `35468453636`.
-3. Verified workflow artifact `fasel-hd-debug-apk`: 7,109,622-byte artifact archive, workflow digest `sha256:8c2ba4df4b3244236bea9f9e8b58fd8f960c6d18ea85ea41d49d96cd328ffc9d`.
-4. Downloaded and unpacked the artifact. `app-debug.apk` is non-zero at 7,676,868 bytes with local SHA-256 `3196afff02d461522cb8aedf7a94a056255e784fa5e4c05e010688c6f0864dc8` and contains AndroidManifest.xml plus multi-dex payload. Package/version manifest decoding remains open because aapt/apkanalyzer are not installed in the current runtime.
-5. Confirmed PR #6 implements deterministic clean-room Catalog/Search → Details/Seasons/Episodes → Sources → playback decision and a validated Native-only internal PlayerActivity launch plan, with regression tests. ResolverRequired/Rejected do not create a player launch.
-6. Inspected the actual launcher UI: `MainActivity` is still only a layout shell and `activity_main.xml` still displays `Fasel HD Recovery`. Therefore screen-level Catalog/Search/Details navigation is NOT complete and is not credited as runtime functionality.
+## Work completed this run
+1. Closed P0-1 by verifying the newest PR #6 exact head and merging it only after all exact-head CI gates passed.
+2. Re-read main and confirmed the launcher remained a placeholder shell: `MainActivity` only inflated `activity_main`, whose only visible content was `Fasel HD Recovery`.
+3. Opened exactly one next PR (#7) from the merged main.
+4. Replaced the placeholder layout with an actual discovery surface: search input, Catalog/Search actions, loading/status state, result list, details/episode text, and Play action.
+5. Wired `MainActivity` through the merged `ContentFlow` and `PlaybackNavigator`: Catalog/Search -> selection -> Details/Episodes -> Sources -> playback decision -> internal `PlayerActivity` for Native decisions. ResolverRequired and Rejected remain explicit non-launch states.
+6. Added lifecycle coroutine support. The UI uses a deterministic clean-room provider and public HLS fixture only to exercise the recovered user path; this is deliberately NOT counted as concrete live-provider restoration.
 
 ## Acceptance criteria / blockers
-
 ### P0
-- P0-1 PR #6 exact-head CI and APK artifact: CLOSED technically; merge remains blocked by connector safety write barrier.
-- P0-2 deterministic application path through playback decision + Native player launch plan: CI VERIFIED on PR #6. Screen-level Catalog/Search/Details/Episodes UI remains OPEN.
-- P0-3 concrete authorized provider transport + pagination/error/loading/retry/cancellation/timeouts: OPEN.
-- P0-4 bounded internal resolver lifecycle: OPEN. Only explicit ResolverRequired decision exists.
-- P0-5 Player UI/lifecycle: BUILD/CI VERIFIED; runtime/rotation/background/error/retry behavior remains OPEN.
-- P0-6 APK non-zero/structure inspection: PARTIAL CLOSED. Package/version decoded-manifest inspection and emulator/device runtime smoke remain OPEN.
+- P0-1 current integration PR: CLOSED and merged at `c8dc2f5...`; PR #7 is now the only open PR.
+- P0-2 application integration: VERIFIED on merged main. Screen-level functional flow: IMPLEMENTED on PR #7 but UNVERIFIED until exact-head CI passes; runtime remains unverified.
+- P0-3 concrete authorized/configurable provider transport with pagination/loading/error/retry/cancellation/timeouts: OPEN.
+- P0-4 bounded internal resolver lifecycle: OPEN; ResolverRequired decision exists but no resolver implementation is credited.
+- P0-5 Player UI/lifecycle: CI VERIFIED on main; runtime/rotation/background/error/retry behavior OPEN.
+- P0-6 APK structure: prior non-zero artifact verified; decoded package/version manifest and emulator/device runtime smoke OPEN.
 
 ### P1
-Movies/Series/Anime/Streaming full user flows, Favorites/History/Resume, Downloads, Settings/Profiles, and reference UI/RTL parity remain OPEN.
+Movies/Series/Anime/Streaming complete user flows, Favorites/History/Resume, Downloads, Settings/Profiles, Arabic/RTL/reference parity remain OPEN.
 
 ### P2
-Further SSRF/DNS-rebinding hardening, performance, dependencies, accessibility, licensing audit and maintenance remain OPEN.
+Further SSRF/DNS-rebinding hardening, performance, dependency/security/license audit, accessibility and maintenance remain OPEN.
 
 ## Honest weighted completion
-
-Evidence can be credited when exact-head CI verifies the open PR, but unmerged work is explicitly identified and runtime-only criteria remain zero.
+Only merged/exact-head CI-verified evidence is credited below. PR #7 UI work receives zero additional verified credit until its exact head passes CI.
 
 | Area | Weight | Evidence-level completion |
 |---|---:|---:|
@@ -57,7 +51,7 @@ Evidence can be credited when exact-head CI verifies the open PR, but unmerged w
 | Sources/provider/pagination | 8% | 55% |
 | Resolver | 7% | 30% |
 | Native Media3 Player + UI/lifecycle | 10% | 75% |
-| End-to-end Catalog/Search→Play integration | 10% | 75% |
+| End-to-end Catalog/Search->Play integration | 10% | 75% |
 | Movies/Series/Anime/Streaming | 5% | 30% |
 | Favorites/History/Resume | 4% | 0% |
 | Downloads | 3% | 0% |
@@ -67,31 +61,24 @@ Evidence can be credited when exact-head CI verifies the open PR, but unmerged w
 | Security/privacy/licenses/dependencies | 1% | 55% |
 
 - **Overall Verified Product Completion: 45.4%**.
-- **Current P0 Path Completion: 52.0%**. Deterministic application integration is now exact-head CI verified, but concrete provider transport, real screens, resolver implementation and runtime playback evidence remain missing.
-- **Runtime-Verified Completion: 0.0%**. A real APK artifact exists and was structurally inspected, but no emulator/device runtime evidence exists.
-- Score increased from 37.9% only because PR #6 now has exact-head CI + APK artifact evidence. It did not increase for MainActivity/UI, concrete provider or resolver because those remain absent.
+- **Current P0 Path Completion: 52.0%**.
+- **Runtime-Verified Completion: 0.0%**.
+- The score does not rise merely because PR #7 contains new UI code. It may rise only after exact-head CI/integration evidence; runtime remains zero until emulator/device evidence exists.
 
 ## CI / artifacts
-
-- PR #6 exact head `b996e191540d1acb2a53241a4b1e2a090ddc72af`.
-- Android CI run `35468453636`: SUCCESS.
-- Unit tests: SUCCESS; Lint: SUCCESS; Build debug APK: SUCCESS; upload artifact: SUCCESS.
-- Artifact ID `10592101478`, name `fasel-hd-debug-apk`, archive size 7,109,622 bytes, workflow digest `sha256:8c2ba4df4b3244236bea9f9e8b58fd8f960c6d18ea85ea41d49d96cd328ffc9d`.
-- Unpacked `app-debug.apk`: 7,676,868 bytes, SHA-256 `3196afff02d461522cb8aedf7a94a056255e784fa5e4c05e010688c6f0864dc8`.
+- PR #6 exact-head Android CI run `35470570450`: SUCCESS across unit tests, lint, debug APK and artifact upload.
+- PR #7 CI: pending after code push; do not merge until the newest exact head is green and mergeable.
+- Prior verified APK evidence remains valid only for the prior exact build; a fresh #7 artifact must be inspected after CI.
 
 ## Security / licensing
-
-- Clean-room implementation only.
-- No recovered credentials, API tokens, signing secrets or persistent cookies.
-- No DRM/CAPTCHA/paywall/access-control bypass.
-- Native Media3 remains first choice; resolver remains an explicit bounded future path.
-- Player Activity is non-exported and playback requests are revalidated.
+- Clean-room implementation only; no credentials/API tokens/signing secrets/persistent cookies.
+- No DRM/CAPTCHA/paywall/access-control bypass, ads/tracking, or external-browser playback.
+- Native Media3 first; PlayerActivity remains internal/non-exported and playback inputs are revalidated.
 
 ## أهداف التشغيل التالي
-
-1. Re-attempt exact-head merge of PR #6 only if the write path permits it; never bypass the exact-head/green-CI rule and never open a second PR while #6 remains open.
-2. On the same PR if merge remains blocked, implement the highest-value P0 screen/application slice only if it can be done without making the already-green merge unsafe; otherwise preserve the verified head for merge.
-3. After merge, implement real Catalog/Search/Details/Episodes navigation instead of the current `Fasel HD Recovery` shell.
-4. Implement authorized/configurable provider transport with timeout/cancellation/loading/error/retry and pagination, without recovered credentials or bypass logic.
-5. Add bounded resolver lifecycle only for ResolverRequired sources; keep native HLS/DASH/MP4 first.
-6. Decode package/version/manifest with Android build tools in CI or another trusted environment, then add emulator/device runtime smoke before any Stable/Golden claim.
+1. Inspect PR #7 exact-head CI. If it fails, read the job logs, fix the root cause on the same branch and add regression coverage where practical.
+2. Merge #7 only when the newest exact head is green and mergeable, then recompute all weighted percentages from main.
+3. Replace the deterministic provider with an authorized/configurable transport boundary including timeout/cancellation/loading/error/retry and pagination while keeping fixtures for deterministic tests.
+4. Implement the bounded internal resolver only for `ResolverRequired`, with HTTPS/SafeHttp/timeouts/cancellation/lifecycle restrictions and no access-control bypass.
+5. Add player error/retry/background/rotation coverage and fresh APK metadata inspection.
+6. Obtain emulator/device runtime smoke evidence before increasing Runtime-Verified Completion or making any Stable/Golden claim.
