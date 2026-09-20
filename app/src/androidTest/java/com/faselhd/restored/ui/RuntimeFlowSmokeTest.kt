@@ -1,5 +1,8 @@
 package com.faselhd.restored.ui
 
+import android.app.Activity
+import android.app.Application
+import android.os.Bundle
 import android.os.SystemClock
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
@@ -12,25 +15,46 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
-import androidx.test.runner.lifecycle.Stage
 import com.faselhd.restored.R
 import org.hamcrest.Matchers.containsString
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 @RunWith(AndroidJUnit4::class)
 class RuntimeFlowSmokeTest {
     @Test
     fun catalogDetailsSourcesDecisionNavigatesToNativePlayer() {
-        ActivityScenario.launch(MainActivity::class.java).use {
-            awaitDisplayedText("Recovered Series")
-            onView(withText("Recovered Series")).perform(click())
-            awaitTextContaining(R.id.detailsText, "S1E1")
-            awaitEnabled(R.id.playButton)
-            onView(withId(R.id.playButton)).perform(click())
-            awaitPlayerActivityResumed()
+        val application = InstrumentationRegistry.getInstrumentation()
+            .targetContext.applicationContext as Application
+        val playerResumed = CountDownLatch(1)
+        val callbacks = object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityResumed(activity: Activity) {
+                if (activity is PlayerActivity) playerResumed.countDown()
+            }
+            override fun onActivityCreated(activity: Activity, state: Bundle?) = Unit
+            override fun onActivityStarted(activity: Activity) = Unit
+            override fun onActivityPaused(activity: Activity) = Unit
+            override fun onActivityStopped(activity: Activity) = Unit
+            override fun onActivitySaveInstanceState(activity: Activity, state: Bundle) = Unit
+            override fun onActivityDestroyed(activity: Activity) = Unit
+        }
+        application.registerActivityLifecycleCallbacks(callbacks)
+        try {
+            ActivityScenario.launch(MainActivity::class.java).use {
+                awaitDisplayedText("Recovered Series")
+                onView(withText("Recovered Series")).perform(click())
+                awaitTextContaining(R.id.detailsText, "S1E1")
+                awaitEnabled(R.id.playButton)
+                onView(withId(R.id.playButton)).perform(click())
+                if (!playerResumed.await(10, TimeUnit.SECONDS)) {
+                    fail("Timed out waiting for PlayerActivity.onResume")
+                }
+            }
+        } finally {
+            application.unregisterActivityLifecycleCallbacks(callbacks)
         }
     }
 
@@ -46,27 +70,6 @@ class RuntimeFlowSmokeTest {
         onView(withId(id)).check(matches(isEnabled()))
     }
 
-    /**
-     * Verify the actual internal activity lifecycle rather than relying on Espresso-Intents' intent
-     * recorder. The latter produced a false negative in CI even though the click completed; a
-     * RESUMED PlayerActivity is stronger runtime evidence that Android resolved and launched the
-     * internal native player route.
-     */
-    private fun awaitPlayerActivityResumed() = awaitAssertion {
-        var resumed = false
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            resumed = ActivityLifecycleMonitorRegistry.getInstance()
-                .getActivitiesInStage(Stage.RESUMED)
-                .any { it is PlayerActivity }
-        }
-        if (!resumed) throw AssertionError("PlayerActivity is not RESUMED")
-    }
-
-    /**
-     * MainActivity intentionally performs provider work in lifecycleScope rather than on the UI
-     * thread. Espresso cannot infer idleness from arbitrary coroutines, so the smoke must wait for
-     * observable acceptance states instead of racing the first frame or using one fixed sleep.
-     */
     private fun awaitAssertion(timeoutMs: Long = 10_000, assertion: () -> Unit) {
         val deadline = SystemClock.uptimeMillis() + timeoutMs
         var lastFailure: Throwable? = null
