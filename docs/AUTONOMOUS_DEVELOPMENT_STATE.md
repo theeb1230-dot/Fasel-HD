@@ -6,18 +6,19 @@ Last updated: 2026-09-20
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
 - Run-start/end main SHA: `32bf410b81e49384a58810b072fab6debaa24b03` (unchanged while PR #18 is pending).
 - Single open PR: #18 `recovery/runtime-emulator-smoke`; do not open a second PR.
-- PR #18 failed runtime-smoke at head `31bff746476ac3796b8ba0468c9402f3bc720e64` while the build job was green. The runtime test synchronization fix commit is `fc31055de2c323b9c57fbe22ec464ee4c8474a18`; this documentation commit advances the exact head again, so newest-head CI must pass before merge.
+- Latest failed exact head before this correction: `ff22c0fea3005f0e953552c772a25e41518b1031`, Android CI run `35499973399`.
+- Corrective runtime-test commit: `1ce5619305ea0d0b5c5798b3c9f800cc6be3a43c`; this documentation commit advances the head again, so newest exact-head CI must pass before merge.
 
 ## Reference APK
 - File: `FaselhdV20.0.2.apk`; expected SHA-256 `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
 - Reference APK was not needed for this runtime-CI defect. No recovered secrets may enter source/logs/tests/docs.
 
 ## Work completed this run
-1. Re-read GitHub truth and PR #18 exact head. CI run `35494858510` proved the build job green but `runtime-smoke` failed specifically at `Emulator end-to-end smoke`; checkout, Java, Gradle setup and KVM all succeeded.
-2. The connector cannot retrieve the job log endpoint, so no unverified exception text is claimed.
-3. Inspected the instrumentation test and production flow. `MainActivity` loads catalog/details/sources asynchronously in `lifecycleScope`, while the smoke immediately asserted list/details state. Espresso does not automatically treat arbitrary lifecycle coroutines as an idling resource, creating a real race in the test harness.
-4. Fixed the regression on the same PR by replacing first-frame assertions with bounded polling of observable acceptance states (catalog row displayed, episode details rendered, play enabled, PlayerActivity intent observed). Polling is capped at 10 seconds and rethrows unexpected failures; it is not an unbounded retry or blind CI rerun.
-5. No production provider/playback/security behavior changed.
+1. Re-read PR #18 and exact-head Actions evidence. Build remained fully green; runtime-smoke alone failed.
+2. Retrieved the full runtime-smoke job log successfully. The emulator booted, `connectedDebugAndroidTest` installed and started one test, and the actual failure was `Timed out waiting for runtime acceptance state: Wanted to match 1 intents. Actually matched 0 intents.` The failure is therefore an instrumentation assertion, not emulator/KVM/bootstrap infrastructure.
+3. Re-inspected `MainActivity`, `ContentFlow`, `PlaybackPipeline`, `SafeHttp`, and `PlaybackNavigator`. The deterministic HTTPS HLS fixture is classified as native and the production path creates an explicit internal `PlayerActivity` intent; no browser route is involved.
+4. Replaced the flaky Espresso-Intents recorder assertion with direct Android lifecycle evidence: after the Play click, the test polls `ActivityLifecycleMonitorRegistry` on the main thread and requires an actual `PlayerActivity` instance to reach `Stage.RESUMED`. This is stronger runtime navigation evidence and removes dependence on intent-recorder behavior.
+5. No production provider, resolver, playback, security, credential, cookie, or network behavior changed.
 
 ## Acceptance criteria / blockers
 ### P0
@@ -62,9 +63,10 @@ Unmerged #18 changes receive no credit.
 - **Runtime-Verified Completion: 0.0%** until corrected emulator smoke passes on newest exact PR head and is merged.
 
 ## CI / artifacts
-- Failed evidence: run `35494858510`, head `31bff746476ac3796b8ba0468c9402f3bc720e64`; build SUCCESS, runtime-smoke FAILURE at emulator test step.
-- Corrective code commit: `fc31055de2c323b9c57fbe22ec464ee4c8474a18`.
-- Newest exact-head CI is pending/not yet observed after the corrective commits. No runtime credit is claimed.
+- Failed evidence: run `35499973399`, head `ff22c0fea3005f0e953552c772a25e41518b1031`; build SUCCESS, runtime-smoke FAILURE.
+- Root-cause evidence from job `106049882445`: emulator booted and test ran; sole test failed because Espresso-Intents recorded zero matching PlayerActivity intents within the bounded wait.
+- Corrective test commit: `1ce5619305ea0d0b5c5798b3c9f800cc6be3a43c`, replacing intent-recorder verification with `PlayerActivity` RESUMED lifecycle verification.
+- Newest exact-head CI is pending/not yet observed after corrective commits. No runtime credit is claimed.
 
 ## Security / licensing
 - Clean-room implementation only; no credentials/API tokens/signing secrets/persistent cookies.
@@ -74,6 +76,6 @@ Unmerged #18 changes receive no credit.
 
 ## أهداف التشغيل التالي
 1. Inspect #18 newest exact-head CI; merge immediately if build and runtime-smoke are green and the PR is mergeable.
-2. If runtime-smoke still fails, obtain the strongest available exact failure evidence and fix the root cause on #18 only; never rerun blindly.
+2. If runtime-smoke still fails, retrieve the exact test/log evidence and fix the root cause on #18 only; never rerun blindly.
 3. Once emulator navigation smoke is merged, add deterministic authorized Media3 decode/playback runtime evidence without external-network dependence.
 4. Keep authorized live-provider configuration explicit and do not invent protected endpoints, tokens or cookies.
