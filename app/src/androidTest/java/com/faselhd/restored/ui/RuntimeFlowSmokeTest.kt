@@ -30,9 +30,12 @@ class RuntimeFlowSmokeTest {
         val application = InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as Application
         val playerResumed = CountDownLatch(1)
+        val playerActivityName = "com.faselhd.restored.ui.PlayerActivity"
         val callbacks = object : Application.ActivityLifecycleCallbacks {
             override fun onActivityResumed(activity: Activity) {
-                if (activity is PlayerActivity) playerResumed.countDown()
+                // Instrumentation and target APK classes can be loaded by different classloaders.
+                // Compare the runtime component name rather than relying on Kotlin `is` identity.
+                if (activity.javaClass.name == playerActivityName) playerResumed.countDown()
             }
             override fun onActivityCreated(activity: Activity, state: Bundle?) = Unit
             override fun onActivityStarted(activity: Activity) = Unit
@@ -50,7 +53,7 @@ class RuntimeFlowSmokeTest {
                 awaitEnabled(R.id.playButton)
                 onView(withId(R.id.playButton)).perform(click())
                 if (!playerResumed.await(10, TimeUnit.SECONDS)) {
-                    fail("Timed out waiting for PlayerActivity.onResume")
+                    fail("Timed out waiting for $playerActivityName.onResume")
                 }
             }
         } finally {
