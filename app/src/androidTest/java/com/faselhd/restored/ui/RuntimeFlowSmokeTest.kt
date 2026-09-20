@@ -6,27 +6,22 @@ import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.NoMatchingViewException
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.intent.Intents
-import androidx.test.espresso.intent.Intents.intended
-import androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isEnabled
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import com.faselhd.restored.R
 import org.hamcrest.Matchers.containsString
-import org.junit.After
 import org.junit.Assert.fail
-import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class RuntimeFlowSmokeTest {
-    @Before fun setUp() = Intents.init()
-    @After fun tearDown() = Intents.release()
-
     @Test
     fun catalogDetailsSourcesDecisionNavigatesToNativePlayer() {
         ActivityScenario.launch(MainActivity::class.java).use {
@@ -35,7 +30,7 @@ class RuntimeFlowSmokeTest {
             awaitTextContaining(R.id.detailsText, "S1E1")
             awaitEnabled(R.id.playButton)
             onView(withId(R.id.playButton)).perform(click())
-            awaitPlayerIntent()
+            awaitPlayerActivityResumed()
         }
     }
 
@@ -51,8 +46,20 @@ class RuntimeFlowSmokeTest {
         onView(withId(id)).check(matches(isEnabled()))
     }
 
-    private fun awaitPlayerIntent() = awaitAssertion {
-        intended(hasComponent(PlayerActivity::class.java.name))
+    /**
+     * Verify the actual internal activity lifecycle rather than relying on Espresso-Intents' intent
+     * recorder. The latter produced a false negative in CI even though the click completed; a
+     * RESUMED PlayerActivity is stronger runtime evidence that Android resolved and launched the
+     * internal native player route.
+     */
+    private fun awaitPlayerActivityResumed() = awaitAssertion {
+        var resumed = false
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            resumed = ActivityLifecycleMonitorRegistry.getInstance()
+                .getActivitiesInStage(Stage.RESUMED)
+                .any { it is PlayerActivity }
+        }
+        if (!resumed) throw AssertionError("PlayerActivity is not RESUMED")
     }
 
     /**
