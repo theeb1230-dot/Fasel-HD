@@ -1,8 +1,5 @@
 package com.faselhd.restored.ui
 
-import android.app.Activity
-import android.app.Application
-import android.os.Bundle
 import android.os.SystemClock
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
@@ -20,44 +17,19 @@ import org.hamcrest.Matchers.containsString
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
+import java.io.FileInputStream
 
 @RunWith(AndroidJUnit4::class)
 class RuntimeFlowSmokeTest {
     @Test
     fun catalogDetailsSourcesDecisionNavigatesToNativePlayer() {
-        val application = InstrumentationRegistry.getInstrumentation()
-            .targetContext.applicationContext as Application
-        val playerResumed = CountDownLatch(1)
-        val playerActivityName = "com.faselhd.restored.ui.PlayerActivity"
-        val callbacks = object : Application.ActivityLifecycleCallbacks {
-            override fun onActivityResumed(activity: Activity) {
-                // Instrumentation and target APK classes can be loaded by different classloaders.
-                // Compare the runtime component name rather than relying on Kotlin `is` identity.
-                if (activity.javaClass.name == playerActivityName) playerResumed.countDown()
-            }
-            override fun onActivityCreated(activity: Activity, state: Bundle?) = Unit
-            override fun onActivityStarted(activity: Activity) = Unit
-            override fun onActivityPaused(activity: Activity) = Unit
-            override fun onActivityStopped(activity: Activity) = Unit
-            override fun onActivitySaveInstanceState(activity: Activity, state: Bundle) = Unit
-            override fun onActivityDestroyed(activity: Activity) = Unit
-        }
-        application.registerActivityLifecycleCallbacks(callbacks)
-        try {
-            ActivityScenario.launch(MainActivity::class.java).use {
-                awaitDisplayedText("Recovered Series")
-                onView(withText("Recovered Series")).perform(click())
-                awaitTextContaining(R.id.detailsText, "S1E1")
-                awaitEnabled(R.id.playButton)
-                onView(withId(R.id.playButton)).perform(click())
-                if (!playerResumed.await(10, TimeUnit.SECONDS)) {
-                    fail("Timed out waiting for $playerActivityName.onResume")
-                }
-            }
-        } finally {
-            application.unregisterActivityLifecycleCallbacks(callbacks)
+        ActivityScenario.launch(MainActivity::class.java).use {
+            awaitDisplayedText("Recovered Series")
+            onView(withText("Recovered Series")).perform(click())
+            awaitTextContaining(R.id.detailsText, "S1E1")
+            awaitEnabled(R.id.playButton)
+            onView(withId(R.id.playButton)).perform(click())
+            awaitResumedActivity("com.faselhd.restored/.ui.PlayerActivity")
         }
     }
 
@@ -71,6 +43,26 @@ class RuntimeFlowSmokeTest {
 
     private fun awaitEnabled(id: Int) = awaitAssertion {
         onView(withId(id)).check(matches(isEnabled()))
+    }
+
+    private fun awaitResumedActivity(component: String, timeoutMs: Long = 10_000) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val deadline = SystemClock.uptimeMillis() + timeoutMs
+        var lastState = ""
+        while (SystemClock.uptimeMillis() < deadline) {
+            val descriptor = instrumentation.uiAutomation.executeShellCommand("dumpsys activity activities")
+            lastState = FileInputStream(descriptor.fileDescriptor).bufferedReader().use { it.readText() }
+            descriptor.close()
+            if (lastState.lineSequence().any { line ->
+                    (line.contains("mResumedActivity") || line.contains("topResumedActivity") || line.contains("ResumedActivity")) &&
+                        line.contains(component)
+                }) return
+            SystemClock.sleep(100)
+        }
+        val relevant = lastState.lineSequence()
+            .filter { it.contains("ResumedActivity") || it.contains("mResumedActivity") || it.contains("topResumedActivity") }
+            .joinToString(" | ")
+        fail("Timed out waiting for Android to report $component resumed. Last task state: $relevant")
     }
 
     private fun awaitAssertion(timeoutMs: Long = 10_000, assertion: () -> Unit) {
