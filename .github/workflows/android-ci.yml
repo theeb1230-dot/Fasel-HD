@@ -80,3 +80,12 @@ jobs:
           arch: x86_64
           disable-animations: true
           script: gradle --no-daemon connectedDebugAndroidTest
+      - name: Preserve runtime smoke reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-smoke-reports
+          path: |
+            app/build/reports/androidTests/connected/
+            app/build/outputs/androidTest-results/connected/
+          if-no-files-found: warn
