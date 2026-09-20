@@ -1,24 +1,24 @@
 # Fasel HD autonomous development state
 
-Last updated: 2026-09-20
+Last updated: 2026-09-21
 
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
 - Run-start/end main SHA: `32bf410b81e49384a58810b072fab6debaa24b03` (unchanged while PR #18 is pending).
-- Single open PR: #18 `recovery/runtime-emulator-smoke`; do not open a second PR.
-- Evaluated PR head at run start: `6623409a5fb1ab0f5fdbb0d9ba722f671dede8c1`, Android CI run `35510829530`: build SUCCESS, runtime-smoke FAILURE.
-- Corrective test commit this run: `df04ad6a5994a3c4e2fc4f124a2dc267a078d5ce`. This documentation commit advances the head again; newest exact-head CI must pass before merge.
+- Single open PR: #18 `recovery/runtime-emulator-smoke`; no second PR may be opened.
+- Evaluated PR head at run start: `0a6fb59b361674baba2c059cd13205ee73fa546b`; Android CI run `35516918098`: build SUCCESS, runtime-smoke FAILURE.
+- Corrective test commit this run: `8d1d922f57d91dae572f7d152567d4056906096b`. This documentation commit advances the head again; newest exact-head CI must pass before merge.
 
 ## Reference APK
 - File: `FaselhdV20.0.2.apk`; expected SHA-256 `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
 - Reference APK was not needed for this instrumentation defect. No recovered secrets may enter source/logs/tests/docs.
 
 ## Work completed this run
-1. Re-read PR #18, exact head, exact-head Actions run/jobs/steps, runtime code and the deterministic test path.
-2. Retrieved the previously unavailable raw runtime-smoke job log and downloaded artifact `runtime-smoke-reports` (22,696 bytes, SHA-256 `dd7f581eab3b2b0d276b9617a2d0ece10380f75a2374fbc0ad695c4520bac7b3`).
-3. Confirmed the emulator itself boots successfully and the instrumentation test starts. The exact failure is `Timed out waiting for PlayerActivity.onResume` after the Play button is enabled and clicked.
-4. Inspected preserved logcat. MainActivity is RESUMED, the deterministic details state reaches `S1E1`, Play is clicked, then MainActivity transitions PAUSED and STOPPED immediately. There is no production crash/FATAL EXCEPTION in the preserved test log. This proves navigation leaves MainActivity; the remaining failure is the test observer not recognizing the target activity resume rather than an emulator/bootstrap failure.
-5. Identified a classloader-sensitive assertion in the instrumentation observer: it used `activity is PlayerActivity`. Replaced it with exact runtime component-name comparison (`activity.javaClass.name == "com.faselhd.restored.ui.PlayerActivity"`) while retaining the stronger requirement that the real target activity reaches `onResume`.
+1. Re-read PR #18 and exact head, then fetched the exact runtime-smoke job log for run `35516918098` / job `106094309798`.
+2. Confirmed API 35 emulator boot and instrumentation startup are healthy. The single test still fails only with `Timed out waiting for com.faselhd.restored.ui.PlayerActivity.onResume` after the deterministic catalog/details/play path reaches the Play click.
+3. Confirmed build job remains green and runtime reports are preserved as artifact ID `10607127008`, 22,798 bytes, SHA-256 `c38757434c12edb4d9bd97c9af46e7f4920b9cdf02d10a10fbd887104856c295`.
+4. Re-read `MainActivity`, `PlayerActivity`, and the manifest. Production navigation is an internal explicit activity path; `PlayerActivity` is declared non-exported and no browser playback is introduced.
+5. Replaced the fragile in-process `Application.ActivityLifecycleCallbacks` observer with Android system task-state evidence: after Play, the test polls `dumpsys activity activities` via instrumentation `UiAutomation` and requires the resumed component to be `com.faselhd.restored/.ui.PlayerActivity`. Failure output now includes the last resumed-activity state, so the next red run will identify what Android actually considers resumed instead of merely timing out on an observer.
 6. No provider/resolver/player/network/security production behavior changed. No blind rerun was performed.
 
 ## Acceptance criteria / blockers
@@ -64,10 +64,10 @@ Unmerged #18 changes receive no credit.
 - **Runtime-Verified Completion: 0.0%** until corrected emulator smoke passes on newest exact PR head and is merged.
 
 ## CI / artifacts
-- Latest evaluated run: `35510829530`, evaluated head `6623409a5fb1ab0f5fdbb0d9ba722f671dede8c1`; build SUCCESS, runtime-smoke FAILURE.
-- Runtime failure: `RuntimeFlowSmokeTest.catalogDetailsSourcesDecisionNavigatesToNativePlayer` -> `Timed out waiting for PlayerActivity.onResume`.
-- Preserved runtime artifact: `runtime-smoke-reports`, 22,696 bytes, SHA-256 `dd7f581eab3b2b0d276b9617a2d0ece10380f75a2374fbc0ad695c4520bac7b3`.
-- Corrective observer commit: `df04ad6a5994a3c4e2fc4f124a2dc267a078d5ce`; newest exact-head CI was not yet observed at the time of this state update. No runtime credit is claimed.
+- Latest evaluated run: `35516918098`, evaluated head `0a6fb59b361674baba2c059cd13205ee73fa546b`; build SUCCESS, runtime-smoke FAILURE.
+- Runtime failure: `RuntimeFlowSmokeTest.catalogDetailsSourcesDecisionNavigatesToNativePlayer` -> timeout waiting for `PlayerActivity.onResume`.
+- Preserved runtime artifact ID `10607127008`, name `runtime-smoke-reports`, 22,798 bytes, SHA-256 `c38757434c12edb4d9bd97c9af46e7f4920b9cdf02d10a10fbd887104856c295`.
+- Corrective system-state assertion commit: `8d1d922f57d91dae572f7d152567d4056906096b`; newest exact-head CI was not yet observed at this state update. No runtime credit is claimed.
 
 ## Security / licensing
 - Clean-room implementation only; no credentials/API tokens/signing secrets/persistent cookies.
@@ -77,6 +77,6 @@ Unmerged #18 changes receive no credit.
 
 ## أهداف التشغيل التالي
 1. Inspect #18 newest exact-head CI; merge immediately if build and runtime-smoke are green and the PR is mergeable.
-2. If runtime-smoke still fails, use the preserved report/logcat to distinguish PlayerActivity creation/start/resume and fix only the proven cause on #18.
+2. If runtime-smoke is red, use the new `Last task state` output to identify the actual resumed Android component and fix only the proven cause on #18.
 3. Once emulator navigation smoke is merged, add deterministic authorized Media3 decode/playback runtime evidence without external-network dependence.
 4. Keep authorized live-provider configuration explicit and do not invent protected endpoints, tokens or cookies.
