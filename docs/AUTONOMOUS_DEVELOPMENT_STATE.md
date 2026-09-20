@@ -6,19 +6,20 @@ Last updated: 2026-09-20
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
 - Run-start/end main SHA: `32bf410b81e49384a58810b072fab6debaa24b03` (unchanged while PR #18 is pending).
 - Single open PR: #18 `recovery/runtime-emulator-smoke`; do not open a second PR.
-- Latest failed exact head before this correction: `ff22c0fea3005f0e953552c772a25e41518b1031`, Android CI run `35499973399`.
-- Corrective runtime-test commit: `1ce5619305ea0d0b5c5798b3c9f800cc6be3a43c`; this documentation commit advances the head again, so newest exact-head CI must pass before merge.
+- Latest evaluated exact head: `7310156c23c17dbf7423e40aaa773d97ce709513`, Android CI run `35505226008`: build SUCCESS, runtime-smoke FAILURE.
+- Corrective commits this run: `d0aff91529bba3f6544452369854153cff76c40c` (lifecycle callback test) and `b071c1c10d8ad8f592509dfbe772ba633fc50c98` (always-upload instrumentation reports). This documentation commit advances the head again; newest exact-head CI must pass before merge.
 
 ## Reference APK
 - File: `FaselhdV20.0.2.apk`; expected SHA-256 `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
-- Reference APK was not needed for this runtime-CI defect. No recovered secrets may enter source/logs/tests/docs.
+- Reference APK was not needed for this instrumentation-CI defect. No recovered secrets may enter source/logs/tests/docs.
 
 ## Work completed this run
-1. Re-read PR #18 and exact-head Actions evidence. Build remained fully green; runtime-smoke alone failed.
-2. Retrieved the full runtime-smoke job log successfully. The emulator booted, `connectedDebugAndroidTest` installed and started one test, and the actual failure was `Timed out waiting for runtime acceptance state: Wanted to match 1 intents. Actually matched 0 intents.` The failure is therefore an instrumentation assertion, not emulator/KVM/bootstrap infrastructure.
-3. Re-inspected `MainActivity`, `ContentFlow`, `PlaybackPipeline`, `SafeHttp`, and `PlaybackNavigator`. The deterministic HTTPS HLS fixture is classified as native and the production path creates an explicit internal `PlayerActivity` intent; no browser route is involved.
-4. Replaced the flaky Espresso-Intents recorder assertion with direct Android lifecycle evidence: after the Play click, the test polls `ActivityLifecycleMonitorRegistry` on the main thread and requires an actual `PlayerActivity` instance to reach `Stage.RESUMED`. This is stronger runtime navigation evidence and removes dependence on intent-recorder behavior.
-5. No production provider, resolver, playback, security, credential, cookie, or network behavior changed.
+1. Re-read repository/default branch, single open PR #18, its exact head, latest Actions result, artifact metadata, workflow and affected runtime code.
+2. Confirmed run `35505226008` on exact head `7310156c...` failed only in runtime-smoke while producing a non-zero `fasel-hd-debug-apk` artifact (7,208,643 bytes, workflow digest `sha256:0b5920823e66490b0bebc0e60d75e149d113a68ba45df21665eb067de685041e`).
+3. Re-inspected `MainActivity`, `PlaybackNavigator`, `PlayerActivity` and manifest. The deterministic path starts an explicit non-exported internal `PlayerActivity`; PlayerActivity constructs Media3 during `onStart`.
+4. Replaced polling `ActivityLifecycleMonitorRegistry` with an `Application.ActivityLifecycleCallbacks` observer registered before launching MainActivity. The smoke now requires an actual `PlayerActivity.onResume` callback after Play, avoiding lifecycle-monitor polling ambiguity while still proving the real activity launched.
+5. Added an `if: always()` CI artifact upload for connected Android test HTML/XML/results. Future runtime failures now preserve exact instrumentation evidence instead of depending on restricted raw Actions-log download endpoints.
+6. No production provider/resolver/player/security/network behavior changed.
 
 ## Acceptance criteria / blockers
 ### P0
@@ -63,10 +64,11 @@ Unmerged #18 changes receive no credit.
 - **Runtime-Verified Completion: 0.0%** until corrected emulator smoke passes on newest exact PR head and is merged.
 
 ## CI / artifacts
-- Failed evidence: run `35499973399`, head `ff22c0fea3005f0e953552c772a25e41518b1031`; build SUCCESS, runtime-smoke FAILURE.
-- Root-cause evidence from job `106049882445`: emulator booted and test ran; sole test failed because Espresso-Intents recorded zero matching PlayerActivity intents within the bounded wait.
-- Corrective test commit: `1ce5619305ea0d0b5c5798b3c9f800cc6be3a43c`, replacing intent-recorder verification with `PlayerActivity` RESUMED lifecycle verification.
-- Newest exact-head CI is pending/not yet observed after corrective commits. No runtime credit is claimed.
+- Latest evaluated run: `35505226008`, head `7310156c23c17dbf7423e40aaa773d97ce709513`; build SUCCESS, runtime-smoke FAILURE.
+- APK artifact from that run: `fasel-hd-debug-apk`, 7,208,643 bytes, workflow digest `sha256:0b5920823e66490b0bebc0e60d75e149d113a68ba45df21665eb067de685041e`.
+- Corrective runtime observer commit: `d0aff91529bba3f6544452369854153cff76c40c`.
+- Diagnostic preservation commit: `b071c1c10d8ad8f592509dfbe772ba633fc50c98`; future runs upload `runtime-smoke-reports` even when instrumentation fails.
+- Newest exact-head CI is pending/not yet observed after these corrective commits. No runtime credit is claimed.
 
 ## Security / licensing
 - Clean-room implementation only; no credentials/API tokens/signing secrets/persistent cookies.
@@ -76,6 +78,6 @@ Unmerged #18 changes receive no credit.
 
 ## أهداف التشغيل التالي
 1. Inspect #18 newest exact-head CI; merge immediately if build and runtime-smoke are green and the PR is mergeable.
-2. If runtime-smoke still fails, retrieve the exact test/log evidence and fix the root cause on #18 only; never rerun blindly.
+2. If runtime-smoke fails, download the new `runtime-smoke-reports` artifact and fix the exact assertion/runtime cause on #18 only; never rerun blindly.
 3. Once emulator navigation smoke is merged, add deterministic authorized Media3 decode/playback runtime evidence without external-network dependence.
 4. Keep authorized live-provider configuration explicit and do not invent protected endpoints, tokens or cookies.
