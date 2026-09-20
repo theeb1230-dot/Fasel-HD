@@ -6,20 +6,20 @@ Last updated: 2026-09-20
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
 - Run-start/end main SHA: `32bf410b81e49384a58810b072fab6debaa24b03` (unchanged while PR #18 is pending).
 - Single open PR: #18 `recovery/runtime-emulator-smoke`; do not open a second PR.
-- Latest evaluated exact head: `7310156c23c17dbf7423e40aaa773d97ce709513`, Android CI run `35505226008`: build SUCCESS, runtime-smoke FAILURE.
-- Corrective commits this run: `d0aff91529bba3f6544452369854153cff76c40c` (lifecycle callback test) and `b071c1c10d8ad8f592509dfbe772ba633fc50c98` (always-upload instrumentation reports). This documentation commit advances the head again; newest exact-head CI must pass before merge.
+- Evaluated PR head at run start: `6623409a5fb1ab0f5fdbb0d9ba722f671dede8c1`, Android CI run `35510829530`: build SUCCESS, runtime-smoke FAILURE.
+- Corrective test commit this run: `df04ad6a5994a3c4e2fc4f124a2dc267a078d5ce`. This documentation commit advances the head again; newest exact-head CI must pass before merge.
 
 ## Reference APK
 - File: `FaselhdV20.0.2.apk`; expected SHA-256 `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
-- Reference APK was not needed for this instrumentation-CI defect. No recovered secrets may enter source/logs/tests/docs.
+- Reference APK was not needed for this instrumentation defect. No recovered secrets may enter source/logs/tests/docs.
 
 ## Work completed this run
-1. Re-read repository/default branch, single open PR #18, its exact head, latest Actions result, artifact metadata, workflow and affected runtime code.
-2. Confirmed run `35505226008` on exact head `7310156c...` failed only in runtime-smoke while producing a non-zero `fasel-hd-debug-apk` artifact (7,208,643 bytes, workflow digest `sha256:0b5920823e66490b0bebc0e60d75e149d113a68ba45df21665eb067de685041e`).
-3. Re-inspected `MainActivity`, `PlaybackNavigator`, `PlayerActivity` and manifest. The deterministic path starts an explicit non-exported internal `PlayerActivity`; PlayerActivity constructs Media3 during `onStart`.
-4. Replaced polling `ActivityLifecycleMonitorRegistry` with an `Application.ActivityLifecycleCallbacks` observer registered before launching MainActivity. The smoke now requires an actual `PlayerActivity.onResume` callback after Play, avoiding lifecycle-monitor polling ambiguity while still proving the real activity launched.
-5. Added an `if: always()` CI artifact upload for connected Android test HTML/XML/results. Future runtime failures now preserve exact instrumentation evidence instead of depending on restricted raw Actions-log download endpoints.
-6. No production provider/resolver/player/security/network behavior changed.
+1. Re-read PR #18, exact head, exact-head Actions run/jobs/steps, runtime code and the deterministic test path.
+2. Retrieved the previously unavailable raw runtime-smoke job log and downloaded artifact `runtime-smoke-reports` (22,696 bytes, SHA-256 `dd7f581eab3b2b0d276b9617a2d0ece10380f75a2374fbc0ad695c4520bac7b3`).
+3. Confirmed the emulator itself boots successfully and the instrumentation test starts. The exact failure is `Timed out waiting for PlayerActivity.onResume` after the Play button is enabled and clicked.
+4. Inspected preserved logcat. MainActivity is RESUMED, the deterministic details state reaches `S1E1`, Play is clicked, then MainActivity transitions PAUSED and STOPPED immediately. There is no production crash/FATAL EXCEPTION in the preserved test log. This proves navigation leaves MainActivity; the remaining failure is the test observer not recognizing the target activity resume rather than an emulator/bootstrap failure.
+5. Identified a classloader-sensitive assertion in the instrumentation observer: it used `activity is PlayerActivity`. Replaced it with exact runtime component-name comparison (`activity.javaClass.name == "com.faselhd.restored.ui.PlayerActivity"`) while retaining the stronger requirement that the real target activity reaches `onResume`.
+6. No provider/resolver/player/network/security production behavior changed. No blind rerun was performed.
 
 ## Acceptance criteria / blockers
 ### P0
@@ -64,11 +64,10 @@ Unmerged #18 changes receive no credit.
 - **Runtime-Verified Completion: 0.0%** until corrected emulator smoke passes on newest exact PR head and is merged.
 
 ## CI / artifacts
-- Latest evaluated run: `35505226008`, head `7310156c23c17dbf7423e40aaa773d97ce709513`; build SUCCESS, runtime-smoke FAILURE.
-- APK artifact from that run: `fasel-hd-debug-apk`, 7,208,643 bytes, workflow digest `sha256:0b5920823e66490b0bebc0e60d75e149d113a68ba45df21665eb067de685041e`.
-- Corrective runtime observer commit: `d0aff91529bba3f6544452369854153cff76c40c`.
-- Diagnostic preservation commit: `b071c1c10d8ad8f592509dfbe772ba633fc50c98`; future runs upload `runtime-smoke-reports` even when instrumentation fails.
-- Newest exact-head CI is pending/not yet observed after these corrective commits. No runtime credit is claimed.
+- Latest evaluated run: `35510829530`, evaluated head `6623409a5fb1ab0f5fdbb0d9ba722f671dede8c1`; build SUCCESS, runtime-smoke FAILURE.
+- Runtime failure: `RuntimeFlowSmokeTest.catalogDetailsSourcesDecisionNavigatesToNativePlayer` -> `Timed out waiting for PlayerActivity.onResume`.
+- Preserved runtime artifact: `runtime-smoke-reports`, 22,696 bytes, SHA-256 `dd7f581eab3b2b0d276b9617a2d0ece10380f75a2374fbc0ad695c4520bac7b3`.
+- Corrective observer commit: `df04ad6a5994a3c4e2fc4f124a2dc267a078d5ce`; newest exact-head CI was not yet observed at the time of this state update. No runtime credit is claimed.
 
 ## Security / licensing
 - Clean-room implementation only; no credentials/API tokens/signing secrets/persistent cookies.
@@ -78,6 +77,6 @@ Unmerged #18 changes receive no credit.
 
 ## أهداف التشغيل التالي
 1. Inspect #18 newest exact-head CI; merge immediately if build and runtime-smoke are green and the PR is mergeable.
-2. If runtime-smoke fails, download the new `runtime-smoke-reports` artifact and fix the exact assertion/runtime cause on #18 only; never rerun blindly.
+2. If runtime-smoke still fails, use the preserved report/logcat to distinguish PlayerActivity creation/start/resume and fix only the proven cause on #18.
 3. Once emulator navigation smoke is merged, add deterministic authorized Media3 decode/playback runtime evidence without external-network dependence.
 4. Keep authorized live-provider configuration explicit and do not invent protected endpoints, tokens or cookies.
