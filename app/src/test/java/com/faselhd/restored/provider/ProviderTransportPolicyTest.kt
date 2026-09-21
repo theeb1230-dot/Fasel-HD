@@ -1,6 +1,7 @@
 package com.faselhd.restored.provider
 
 import com.faselhd.restored.network.SafeHttp
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
@@ -37,10 +38,15 @@ class ProviderTransportPolicyTest {
         }
         val client = OkHttpClient.Builder().build()
         val transport = ProviderTransport(client = client, callFactory = callFactory)
-        val request = async { transport.get("https://example.org/slow") }
+        // UNDISPATCHED guarantees ProviderTransport reaches enqueue() before this test thread waits.
+        // The fake call never invokes its callback, so the coroutine remains suspended until cancelled.
+        val request = async(start = CoroutineStart.UNDISPATCHED) {
+            transport.get("https://example.org/slow")
+        }
 
         try {
             assertTrue("transport must enqueue the HTTP call", started.await(1, TimeUnit.SECONDS))
+            assertNotNull("transport must create a call before cancellation", capturedCall.get())
             request.cancelAndJoin()
             assertTrue("coroutine cancellation must invoke Call.cancel", cancelled.await(1, TimeUnit.SECONDS))
             assertTrue("the exact transport call must be cancelled", capturedCall.get().isCanceled())
