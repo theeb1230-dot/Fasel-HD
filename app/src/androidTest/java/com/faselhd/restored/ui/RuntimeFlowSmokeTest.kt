@@ -56,31 +56,21 @@ class RuntimeFlowSmokeTest {
     private fun assertNativePlayerSurfaceAndPreparedState() {
         awaitResumedActivity("com.faselhd.restored/.ui.PlayerActivity")
         awaitAssertion {
-            onView(isAssignableFrom(PlayerView::class.java)).check(matches(isDisplayed()))
+            onView(withId(PlayerActivity.PLAYER_VIEW_ID)).check(matches(isDisplayed()))
         }
         awaitAssertion {
-            val activity = currentPlayerActivity() ?: throw AssertionError("PlayerActivity not resumed")
-            val state = activity.runtimePlaybackState()
-            assertTrue(
-                "Media3 must leave STATE_IDLE after prepare; actual state=$state position=${activity.runtimePlaybackPositionMs()}",
-                state != null && state != Player.STATE_IDLE
-            )
-        }
-    }
-
-    private fun currentPlayerActivity(): PlayerActivity? {
-        var current: PlayerActivity? = null
-        InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            // The PlayerView belongs to the resumed PlayerActivity. Resolve its Context without relying on
-            // process-global lifecycle callbacks, which proved flaky on API 35.
-            try {
-                val view = androidx.test.espresso.Espresso.onView(withId(PlayerActivity.PLAYER_VIEW_ID))
-                view.check { matched, _ -> current = matched?.context as? PlayerActivity }
-            } catch (_: Throwable) {
-                current = null
+            onView(withId(PlayerActivity.PLAYER_VIEW_ID)).check { matched, _ ->
+                val playerView = matched as? PlayerView
+                    ?: throw AssertionError("Expected Media3 PlayerView")
+                val player = playerView.player
+                    ?: throw AssertionError("PlayerView has no attached Media3 player")
+                val state = player.playbackState
+                assertTrue(
+                    "Media3 must leave STATE_IDLE after prepare; actual state=$state position=${player.currentPosition}",
+                    state != Player.STATE_IDLE
+                )
             }
         }
-        return current
     }
 
     private fun awaitDisplayedText(text: String) = awaitAssertion {
