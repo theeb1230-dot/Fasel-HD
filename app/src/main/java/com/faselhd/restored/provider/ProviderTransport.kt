@@ -32,13 +32,14 @@ class ProviderTransport(
         .callTimeout(20, TimeUnit.SECONDS)
         .followRedirects(false)
         .followSslRedirects(false)
-        .build()
+        .build(),
+    private val callFactory: Call.Factory = client,
 ) {
     suspend fun get(url: String): TransportResult {
         val normalized = SafeHttp.normalize(url) ?: return TransportResult.Rejected("unsafe_url")
         val request = Request.Builder().url(normalized).get().build()
         return suspendCancellableCoroutine { continuation ->
-            val call = client.newCall(request)
+            val call = callFactory.newCall(request)
             continuation.invokeOnCancellation { call.cancel() }
             call.enqueue(object : Callback {
                 override fun onFailure(call: Call, e: IOException) {
