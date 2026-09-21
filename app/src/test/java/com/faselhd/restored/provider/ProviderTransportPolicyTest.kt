@@ -7,12 +7,10 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
-import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
 import org.junit.Assert.*
 import org.junit.Test
-import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -34,10 +32,11 @@ class ProviderTransportPolicyTest {
         val started = CountDownLatch(1)
         val cancelled = CountDownLatch(1)
         val capturedCall = AtomicReference<Call>()
-        val client = OkHttpClient.Builder().callFactory { request ->
+        val callFactory = Call.Factory { request: Request ->
             RecordingPendingCall(request, started, cancelled).also(capturedCall::set)
-        }.build()
-        val transport = ProviderTransport(client = client)
+        }
+        val client = OkHttpClient.Builder().build()
+        val transport = ProviderTransport(client = client, callFactory = callFactory)
         val request = async { transport.get("https://example.org/slow") }
 
         try {
@@ -64,7 +63,6 @@ class ProviderTransportPolicyTest {
         override fun enqueue(responseCallback: Callback) {
             check(executed.compareAndSet(false, true)) { "Already Executed" }
             started.countDown()
-            // Deliberately never completes. The coroutine can finish only through cancellation.
         }
         override fun cancel() {
             canceled.set(true)
