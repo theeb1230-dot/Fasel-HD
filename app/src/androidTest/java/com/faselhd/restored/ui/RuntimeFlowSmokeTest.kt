@@ -6,6 +6,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.NoMatchingViewException
 import androidx.test.espresso.action.ViewActions.click
+import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
@@ -31,10 +32,29 @@ class RuntimeFlowSmokeTest {
             awaitTextContaining(R.id.detailsText, "S1E1")
             awaitEnabled(R.id.playButton)
             onView(withId(R.id.playButton)).perform(click())
-            awaitResumedActivity("com.faselhd.restored/.ui.PlayerActivity")
-            awaitAssertion {
-                onView(isAssignableFrom(PlayerView::class.java)).check(matches(isDisplayed()))
-            }
+            assertNativePlayerSurface()
+        }
+    }
+
+    @Test
+    fun searchDetailsSourcesDecisionNavigatesToNativePlayer() {
+        ActivityScenario.launch(MainActivity::class.java).use {
+            awaitDisplayedText("Recovered Series")
+            onView(withId(R.id.searchQuery)).perform(replaceText("runtime proof"))
+            onView(withId(R.id.searchButton)).perform(click())
+            awaitDisplayedText("Result: runtime proof")
+            onView(withText("Result: runtime proof")).perform(click())
+            awaitTextContaining(R.id.detailsText, "S1E1")
+            awaitEnabled(R.id.playButton)
+            onView(withId(R.id.playButton)).perform(click())
+            assertNativePlayerSurface()
+        }
+    }
+
+    private fun assertNativePlayerSurface() {
+        awaitResumedActivity("com.faselhd.restored/.ui.PlayerActivity")
+        awaitAssertion {
+            onView(isAssignableFrom(PlayerView::class.java)).check(matches(isDisplayed()))
         }
     }
 
