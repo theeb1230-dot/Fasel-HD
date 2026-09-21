@@ -4,29 +4,29 @@ Last updated: 2026-09-21
 
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Run-start main SHA: `096f1e481cc225b09cd5590723750dafcf0dd226`.
-- PR #25 exact head `5cad27e32b2e0c673d28073ef5d4525a84efd6d2` was mergeable and Android CI run `35645439000` was fully green; merged as squash commit `98328c452d874364fd6373e6482c9f6404c5399f`.
-- Current main SHA after merge: `98328c452d874364fd6373e6482c9f6404c5399f`.
-- One open PR only: #26 `recovery/provider-type-correct-search`; code head before this handoff commit `0f1e5e12c6a7ad4c47c41e9d1af6653cfb01cd3b`.
+- Run-start main SHA: `98328c452d874364fd6373e6482c9f6404c5399f`.
+- PR #26 exact head `b51f4af122abcf866adc15f111c62972ae6eb9e0` was mergeable and Android CI run `35652043541` was fully green; merged as squash commit `7c1da0a7f69abc2582eb564ce891ff6f0753d51b`.
+- Current main SHA: `7c1da0a7f69abc2582eb564ce891ff6f0753d51b`.
+- Sole open PR: #27 `recovery/provider-e2e-fixture`; code head before this handoff commit `d5776f369d73fe3148abef4ff45b175a7292a3c8`.
 
 ## Reference APK
 - Reference: `FaselhdV20.0.2.apk`; expected SHA-256 `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
 - APK reinspection was not required for the provider correctness defects addressed in this run. No recovered endpoint/token/cookie/credential/bypass material was introduced.
 
 ## Work completed this run
-1. Re-read repository truth and PR #25 exact-head CI instead of inheriting the prior handoff.
-2. Closed P0-1: run `35645439000` had green `build` and `runtime-smoke`; Unit tests, Lint, debug APK verification and emulator end-to-end smoke all passed. Merged #25 immediately.
-3. Accepted artifact evidence from that exact head: `fasel-hd-debug-apk` id `10659468835`, 7,213,471 bytes, SHA-256 `c1be00c5d34938263828570db324af0de5b53d45a2d7e08d7b3389aed2db296b`; runtime reports id `10659698710`, 41,195 bytes, SHA-256 `53f57c9a7dcfa1661a27a775ebf3552210503511fc0430f862b4bdcb14760b84`.
-4. Re-read provider code after merge and found a concrete functional defect affecting P0/P1 coverage: `ConfiguredContentProvider.search()` hard-coded decoded search results to `MediaType.MOVIE`. Series/Anime searches would therefore lose their section type before details/navigation even if the provider response was otherwise valid.
-5. Opened PR #26 on fresh main. Added typed provider search `(query, MediaType, page)` and type-aware endpoint construction while preserving the legacy `ContentProvider.search(query,page)` movie-default contract for compatibility.
-6. Added regression tests proving typed Series and Anime searches preserve their media type, while legacy search remains Movie-default. No security/network boundary was weakened.
+1. Inspect exact-head CI for #27; merge immediately if green and mergeable, otherwise inspect logs and fix the same PR.
+2. Extend the deterministic provider proof into bounded resolver/runtime behavior without external-browser playback or bypasses.
+3. Add authorized external provider evidence only when a credential-free, explicitly permitted endpoint/fixture is available.
+4. Prove Movies/Series/Anime/Streaming independently before lower-value UI polish.
+5. Added deterministic credential-free integration evidence across authorized fixture transport -> JSON decode -> typed SERIES domain -> details -> sources -> ProviderGateway SafeHttp filtering -> native HLS PlaybackDecision.
+6. The fixture intentionally includes a javascript source and proves it is removed before playback decision. No production security/network policy changed.
 
 ## Acceptance criteria / blockers
 ### P0
-- P0-1: #25 CLOSED and merged with exact-head green CI. #26 is now the sole PR and must pass exact-head CI before merge.
+- P0-1: #26 CLOSED/merged with exact-head green CI. #27 is the sole PR; it must pass exact-head CI and become mergeable before merge.
 - P0-2 Player: deterministic project-owned Media3 fixture reaches READY and advances >=250 ms on emulator; rotation/lifecycle runtime-proven. Physical-device/long-playback remain open.
-- P0-3 E2E: deterministic Catalog/Search -> Details/Episodes -> Sources -> decision -> native Player runtime-proven. Authorized concrete provider/resolver E2E remains OPEN.
-- P0-4 Provider: transport/mapping/pagination/retry/cancellation are now merged and CI-proven. PR #26 fixes media-type corruption in typed search; authorized concrete provider runtime evidence remains OPEN.
+- P0-3 E2E: deterministic Catalog/Search -> Details/Episodes -> Sources -> native Player runtime is already proven; #27 now adds transport/decode/typed-domain/safe-source/native-decision integration evidence. Actual authorized external provider/resolver runtime remains OPEN.
+- P0-4 Provider: transport/mapping/pagination/retry/cancellation and typed Movie/Series/Anime search are merged and CI-proven. #27 extends deterministic provider integration; external authorized provider runtime remains OPEN.
 - P0-5 Resolver: bounded HTTPS decision layer/tests exist; authorized runtime resolver evidence remains OPEN.
 - P0-6 APK: exact #25 artifact is non-zero and CI-verified; physical-device evidence remains OPEN.
 
@@ -59,17 +59,17 @@ IPv6/private/link-local/DNS-rebinding hardening, dependency/license audit, acces
 | Security/privacy/licenses/dependencies | 1% | 55% |
 
 - **Overall Verified Product Completion: 72.0%**.
-- **Current P0 Path Completion: 89.0%**.
+- **Current P0 Path Completion: 89.5%**.
 - **Runtime-Verified Completion: 32.0%**.
 - **Beta Readiness: 70.0%**.
 - P0 rises only for the now-merged, exact-head CI-proven cancellation path. No completion credit is granted yet for #26 until its exact head passes CI and is merged.
 
 ## CI / artifacts
-- PR #25 accepted exact head: `5cad27e32b2e0c673d28073ef5d4525a84efd6d2`.
-- Android CI run `35645439000`: build SUCCESS; runtime-smoke SUCCESS.
-- APK artifact `10659468835`: 7,213,471 bytes; SHA-256 `c1be00c5d34938263828570db324af0de5b53d45a2d7e08d7b3389aed2db296b`.
-- Runtime reports artifact `10659698710`: 41,195 bytes; SHA-256 `53f57c9a7dcfa1661a27a775ebf3552210503511fc0430f862b4bdcb14760b84`.
-- PR #26 code head before handoff: `0f1e5e12c6a7ad4c47c41e9d1af6653cfb01cd3b`; fetch the exact post-handoff head and CI before judging it.
+- PR #26 accepted exact head: `b51f4af122abcf866adc15f111c62972ae6eb9e0`.
+- Android CI run `35652043541`: build SUCCESS; runtime-smoke SUCCESS.
+- APK artifact: 7,213,826 bytes; SHA-256 `3c1d27b1077242a8b4da82c8945b05457595c17c824df43bb10b14a4eed4c403`.
+- Runtime reports: 42,100 bytes; SHA-256 `ef94094fde5bd71a7a234261b087ecc300527d13288409a142fb318029c0b2c3`.
+- PR #27 code head before handoff: `d5776f369d73fe3148abef4ff45b175a7292a3c8`; no completion credit until its exact post-handoff head passes CI.
 
 ## Security / licensing
 - Clean-room only. No credentials/API tokens/signing secrets/persistent cookies.
@@ -77,8 +77,8 @@ IPv6/private/link-local/DNS-rebinding hardening, dependency/license audit, acces
 - SafeHttp, redirect and timeout boundaries remain unchanged.
 
 ## ما لا يعمل بعد بصراحة
-- PR #26 typed-search correction is not yet exact-head CI-proven or merged.
-- No verified authorized concrete provider/resolver E2E path yet.
+- PR #27 deterministic provider integration is not yet exact-head CI-proven/merged.
+- No verified authorized external provider/resolver runtime E2E path yet.
 - No physical-device smoke or long-duration playback proof.
 - Movies/Series/Anime/Streaming are not all runtime-proven independently.
 - Favorites/History/Resume, Downloads, Settings/Profiles and full Arabic/RTL/reference parity remain incomplete.
