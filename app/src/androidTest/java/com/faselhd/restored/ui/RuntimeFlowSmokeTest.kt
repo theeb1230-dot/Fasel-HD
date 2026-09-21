@@ -1,6 +1,7 @@
 package com.faselhd.restored.ui
 
 import android.os.SystemClock
+import androidx.media3.common.Player
 import androidx.media3.ui.PlayerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
@@ -17,6 +18,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.faselhd.restored.R
 import org.hamcrest.Matchers.containsString
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,7 +34,7 @@ class RuntimeFlowSmokeTest {
             awaitTextContaining(R.id.detailsText, "S1E1")
             awaitEnabled(R.id.playButton)
             onView(withId(R.id.playButton)).perform(click())
-            assertNativePlayerSurface()
+            assertNativePlayerSurfaceAndPreparedState()
         }
     }
 
@@ -47,15 +49,38 @@ class RuntimeFlowSmokeTest {
             awaitTextContaining(R.id.detailsText, "S1E1")
             awaitEnabled(R.id.playButton)
             onView(withId(R.id.playButton)).perform(click())
-            assertNativePlayerSurface()
+            assertNativePlayerSurfaceAndPreparedState()
         }
     }
 
-    private fun assertNativePlayerSurface() {
+    private fun assertNativePlayerSurfaceAndPreparedState() {
         awaitResumedActivity("com.faselhd.restored/.ui.PlayerActivity")
         awaitAssertion {
             onView(isAssignableFrom(PlayerView::class.java)).check(matches(isDisplayed()))
         }
+        awaitAssertion {
+            val activity = currentPlayerActivity() ?: throw AssertionError("PlayerActivity not resumed")
+            val state = activity.runtimePlaybackState()
+            assertTrue(
+                "Media3 must leave STATE_IDLE after prepare; actual state=$state position=${activity.runtimePlaybackPositionMs()}",
+                state != null && state != Player.STATE_IDLE
+            )
+        }
+    }
+
+    private fun currentPlayerActivity(): PlayerActivity? {
+        var current: PlayerActivity? = null
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            // The PlayerView belongs to the resumed PlayerActivity. Resolve its Context without relying on
+            // process-global lifecycle callbacks, which proved flaky on API 35.
+            try {
+                val view = androidx.test.espresso.Espresso.onView(withId(PlayerActivity.PLAYER_VIEW_ID))
+                view.check { matched, _ -> current = matched?.context as? PlayerActivity }
+            } catch (_: Throwable) {
+                current = null
+            }
+        }
+        return current
     }
 
     private fun awaitDisplayedText(text: String) = awaitAssertion {
