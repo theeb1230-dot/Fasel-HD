@@ -5,13 +5,17 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
 import okhttp3.Call
-import okhttp3.Interceptor
+import okhttp3.Callback
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
+import okhttp3.Request
+import okhttp3.Response
 import org.junit.Assert.*
 import org.junit.Test
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 class ProviderTransportPolicyTest {
@@ -27,33 +31,48 @@ class ProviderTransportPolicyTest {
     }
 
     @Test fun coroutineCancellationCancelsUnderlyingHttpCall() = runBlocking {
-        val entered = CountDownLatch(1)
+        val started = CountDownLatch(1)
+        val cancelled = CountDownLatch(1)
         val capturedCall = AtomicReference<Call>()
-        val releaseInterceptor = CountDownLatch(1)
-        val client = OkHttpClient.Builder().addInterceptor(Interceptor { chain ->
-            capturedCall.set(chain.call())
-            entered.countDown()
-            try {
-                releaseInterceptor.await(3, TimeUnit.SECONDS)
-                throw IOException("test interceptor released")
-            } catch (e: InterruptedException) {
-                Thread.currentThread().interrupt()
-                throw IOException("test interrupted", e)
-            }
-        }).build()
+        val client = OkHttpClient.Builder().callFactory { request ->
+            RecordingPendingCall(request, started, cancelled).also(capturedCall::set)
+        }.build()
         val transport = ProviderTransport(client = client)
         val request = async { transport.get("https://example.org/slow") }
 
         try {
-            assertTrue("interceptor should receive the request", entered.await(1, TimeUnit.SECONDS))
+            assertTrue("transport must enqueue the HTTP call", started.await(1, TimeUnit.SECONDS))
             request.cancelAndJoin()
-            val call = capturedCall.get()
-            assertNotNull("test must capture the exact OkHttp call", call)
-            assertTrue("coroutine cancellation must cancel the exact OkHttp call", call.isCanceled())
+            assertTrue("coroutine cancellation must invoke Call.cancel", cancelled.await(1, TimeUnit.SECONDS))
+            assertTrue("the exact transport call must be cancelled", capturedCall.get().isCanceled())
         } finally {
-            releaseInterceptor.countDown()
             client.dispatcher.executorService.shutdownNow()
             client.connectionPool.evictAll()
         }
+    }
+
+    private class RecordingPendingCall(
+        private val request: Request,
+        private val started: CountDownLatch,
+        private val cancelled: CountDownLatch,
+    ) : Call {
+        private val executed = AtomicBoolean(false)
+        private val canceled = AtomicBoolean(false)
+
+        override fun request(): Request = request
+        override fun execute(): Response = error("ProviderTransport must use enqueue, not execute")
+        override fun enqueue(responseCallback: Callback) {
+            check(executed.compareAndSet(false, true)) { "Already Executed" }
+            started.countDown()
+            // Deliberately never completes. The coroutine can finish only through cancellation.
+        }
+        override fun cancel() {
+            canceled.set(true)
+            cancelled.countDown()
+        }
+        override fun isExecuted(): Boolean = executed.get()
+        override fun isCanceled(): Boolean = canceled.get()
+        override fun timeout() = okio.Timeout.NONE
+        override fun clone(): Call = RecordingPendingCall(request, started, cancelled)
     }
 }
