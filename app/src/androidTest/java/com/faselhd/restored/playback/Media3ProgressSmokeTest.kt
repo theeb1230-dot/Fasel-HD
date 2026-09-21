@@ -7,6 +7,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.util.concurrent.atomic.AtomicReference
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,34 +25,50 @@ class Media3ProgressSmokeTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val fixture = File(context.cacheDir, "media3-owned-progress-probe.wav")
         writeOwnedPcmWav(fixture)
-        val player = ExoPlayer.Builder(context).build()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val playerRef = AtomicReference<ExoPlayer>()
+        instrumentation.runOnMainSync {
+            playerRef.set(ExoPlayer.Builder(context).build().apply {
+                setMediaItem(MediaItem.fromUri(Uri.fromFile(fixture)))
+                prepare()
+                playWhenReady = true
+            })
+        }
+        val player = playerRef.get()
         try {
-            player.setMediaItem(MediaItem.fromUri(Uri.fromFile(fixture)))
-            player.prepare()
-            player.playWhenReady = true
-
-            await("Media3 READY", 10_000) {
+            awaitOnMain("Media3 READY", 10_000) {
                 player.playerError == null && player.playbackState == Player.STATE_READY
             }
-            val start = player.currentPosition
-            await("advancing playback position", 5_000) {
+            val start = readOnMain { player.currentPosition }
+            awaitOnMain("advancing playback position", 5_000) {
                 player.playerError == null && player.currentPosition >= start + 250
             }
-            assertTrue("owned fixture must have a positive duration", player.duration > 0)
-            assertTrue("playback must advance beyond 250 ms", player.currentPosition >= start + 250)
+            val duration = readOnMain { player.duration }
+            val end = readOnMain { player.currentPosition }
+            assertTrue("owned fixture must have a positive duration", duration > 0)
+            assertTrue("playback must advance beyond 250 ms", end >= start + 250)
         } finally {
-            player.release()
+            instrumentation.runOnMainSync { player.release() }
             fixture.delete()
         }
     }
 
-    private fun await(label: String, timeoutMs: Long, condition: () -> Boolean) {
+    private fun awaitOnMain(label: String, timeoutMs: Long, condition: () -> Boolean) {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
         val deadline = SystemClock.uptimeMillis() + timeoutMs
         while (SystemClock.uptimeMillis() < deadline) {
-            if (condition()) return
+            val result = AtomicReference(false)
+            instrumentation.runOnMainSync { result.set(condition()) }
+            if (result.get()) return
             SystemClock.sleep(50)
         }
         throw AssertionError("Timed out waiting for $label")
+    }
+
+    private fun <T> readOnMain(block: () -> T): T {
+        val result = AtomicReference<T>()
+        InstrumentationRegistry.getInstrumentation().runOnMainSync { result.set(block()) }
+        return result.get()
     }
 
     /** Generates our own 2-second mono PCM WAV fixture; no network/provider/copyright dependency. */
