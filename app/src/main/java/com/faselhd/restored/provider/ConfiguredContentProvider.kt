@@ -15,14 +15,15 @@ class ConfiguredContentProvider(
     private val catalogUrl: (MediaType, Int) -> String,
     private val searchUrl: (String, Int) -> String,
     private val detailsLoader: suspend (String, MediaType) -> MediaDetails,
-    private val sourcesLoader: suspend (String, String?) -> List<PlaybackSource>
+    private val sourcesLoader: suspend (String, String?) -> List<PlaybackSource>,
+    private val retryPolicy: ProviderRetryPolicy = ProviderRetryPolicy()
 ) : ContentProvider {
     override suspend fun catalog(type: MediaType, page: Int): Page<MediaSummary> =
-        requirePage(pageLoader.mediaPage(catalogUrl(type, page), type))
+        requirePage(retryPolicy.execute { pageLoader.mediaPage(catalogUrl(type, page), type) })
 
     override suspend fun search(query: String, page: Int): Page<MediaSummary> {
         require(query.isNotBlank()) { "query must not be blank" }
-        return requirePage(pageLoader.mediaPage(searchUrl(query, page), MediaType.MOVIE))
+        return requirePage(retryPolicy.execute { pageLoader.mediaPage(searchUrl(query, page), MediaType.MOVIE) })
     }
 
     override suspend fun details(id: String, type: MediaType): MediaDetails = detailsLoader(id, type)
