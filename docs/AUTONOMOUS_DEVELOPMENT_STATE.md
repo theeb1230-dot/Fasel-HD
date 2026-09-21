@@ -6,19 +6,19 @@ Last updated: 2026-09-21
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
 - Run-start/current main SHA: `096f1e481cc225b09cd5590723750dafcf0dd226`.
 - One open PR only: #25, branch `recovery/provider-cancellable-transport`.
-- Failed exact head observed this run: `e762943419113479428e43b191b36df78804eb44`; corrective code head before this handoff: `fab83216c41de0eacfd470bd856b0563d7d9b879`.
+- Failed exact head inspected this run: `9b930d7804c5117012fd1d815a227731ff75a3aa`; corrective code commit: `22e524648dce60c7020313b9ab39a22969269ffc`.
 
 ## Reference APK
 - Reference: `FaselhdV20.0.2.apk`; expected SHA-256 `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
-- APK reinspection was not required for this isolated provider transport test/compile defect. No recovered endpoint, token, cookie, credential or bypass material was introduced.
+- APK reinspection was not required for this isolated provider cancellation-test scheduling defect. No recovered endpoint, token, cookie, credential or bypass material was introduced.
 
 ## Work completed this run
-1. Re-read repository truth and PR #25 exact head instead of trusting the stale handoff.
-2. Exact-head Android CI run `35632547014`: runtime-smoke SUCCESS; build FAILURE during unit-test compilation. Lint/APK were skipped after compilation failure.
-3. Pulled the exact build log. Root cause: `OkHttpClient.Builder().callFactory` does not exist in the pinned OkHttp API; the test therefore did not compile (`Unresolved reference 'callFactory'`).
-4. Fixed the boundary cleanly instead of rerunning: `ProviderTransport` now accepts an optional `Call.Factory` defaulting to its existing `OkHttpClient`; production behavior is unchanged, while tests can inject a deterministic pending Call.
-5. Updated the cancellation regression test to inject `Call.Factory` directly. It proves asynchronous `enqueue()` and that coroutine cancellation invokes `cancel()` on the exact underlying Call without DNS/network/timing races.
-6. No SafeHttp, redirect, timeout, playback, credential or resolver policy was weakened.
+1. Re-read default branch, exact main, all branches, open PR and exact head, CI jobs/logs, handoff and provider transport/test code.
+2. Exact-head Android CI run `35639026336`: runtime-smoke SUCCESS; build FAILURE at `testDebugUnitTest`. 54 tests ran, one failed: `ProviderTransportPolicyTest.coroutineCancellationCancelsUnderlyingHttpCall` at line 31.
+3. Root cause: the test launched `async` with the inherited `runBlocking` event loop and then synchronously blocked the same thread in `CountDownLatch.await`; the child coroutine therefore had no guaranteed chance to reach `ProviderTransport.get()`/`enqueue()` before the assertion timeout. This was a test scheduling defect, not evidence that runtime transport cancellation failed.
+4. Fixed the same PR without blind rerun: the cancellation proof now uses `async(start = CoroutineStart.UNDISPATCHED)`, which deterministically executes through `enqueue()` until the fake Call leaves the coroutine suspended. The test then cancels and joins, and verifies `cancel()` on the exact captured Call.
+5. Production `ProviderTransport` remains unchanged: SafeHttp normalization, asynchronous `Call.Factory.newCall(...).enqueue(...)`, `invokeOnCancellation { call.cancel() }`, no redirects, and existing timeout policy remain intact.
+6. No security boundary, provider endpoint, credential, resolver or playback policy was weakened.
 
 ## Acceptance criteria / blockers
 ### P0
@@ -63,15 +63,14 @@ IPv6/private/link-local/DNS-rebinding hardening, dependency/license audit, acces
 - No new completion credit yet because the corrective head is not CI-proven/merged.
 
 ## CI / artifacts
-- Failed PR #25 exact head: `e762943419113479428e43b191b36df78804eb44`.
-- Android CI run `35632547014`: runtime-smoke SUCCESS; build FAILURE at `compileDebugUnitTestKotlin` because the test called nonexistent `OkHttpClient.Builder.callFactory`.
-- Corrective code head before handoff: `fab83216c41de0eacfd470bd856b0563d7d9b879`; fetch PR exact head after this handoff commit before judging CI.
-- No accepted new Debug APK artifact from the failed build because APK build/upload steps were skipped.
+- Failed PR #25 exact head: `9b930d7804c5117012fd1d815a227731ff75a3aa`.
+- Android CI run `35639026336`: runtime-smoke SUCCESS; build FAILURE only at unit tests; 54 tests, 1 failure. Lint/APK steps were skipped after the unit-test failure, so there is no accepted new APK artifact from this run.
+- Corrective code commit: `22e524648dce60c7020313b9ab39a22969269ffc`; fetch PR exact head after this handoff commit before judging CI.
 
 ## Security / licensing
 - Clean-room only. No credentials/API tokens/signing secrets/persistent cookies.
 - No DRM/CAPTCHA/paywall/access-control bypass, ads/tracking or external-browser playback.
-- SafeHttp/redirect/timeouts remain unchanged; Call.Factory injection is a testability seam and defaults to the production OkHttpClient.
+- SafeHttp/redirect/timeouts remain unchanged; injected Call.Factory remains a testability seam defaulting to the production OkHttpClient.
 
 ## ما لا يعمل بعد بصراحة
 - PR #25 corrective head is not yet CI-proven/merged.
