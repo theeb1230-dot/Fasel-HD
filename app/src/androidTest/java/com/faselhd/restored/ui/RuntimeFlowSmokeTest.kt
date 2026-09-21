@@ -1,6 +1,7 @@
 package com.faselhd.restored.ui
 
 import android.os.SystemClock
+import android.view.Surface
 import androidx.media3.common.Player
 import androidx.media3.ui.PlayerView
 import androidx.test.core.app.ActivityScenario
@@ -9,7 +10,6 @@ import androidx.test.espresso.NoMatchingViewException
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isEnabled
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -35,6 +35,7 @@ class RuntimeFlowSmokeTest {
             awaitEnabled(R.id.playButton)
             onView(withId(R.id.playButton)).perform(click())
             assertNativePlayerSurfaceAndPreparedState()
+            assertNativePlayerSurvivesRotation()
         }
     }
 
@@ -70,6 +71,20 @@ class RuntimeFlowSmokeTest {
                     state != Player.STATE_IDLE
                 )
             }
+        }
+    }
+
+    private fun assertNativePlayerSurvivesRotation() {
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        try {
+            automation.setRotation(Surface.ROTATION_90)
+            SystemClock.sleep(500)
+            assertNativePlayerSurfaceAndPreparedState()
+            automation.setRotation(Surface.ROTATION_0)
+            SystemClock.sleep(500)
+            assertNativePlayerSurfaceAndPreparedState()
+        } finally {
+            automation.setRotation(Surface.ROTATION_0)
         }
     }
 
