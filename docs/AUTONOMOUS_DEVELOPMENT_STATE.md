@@ -4,36 +4,37 @@ Last updated: 2026-09-21
 
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Run-start and current main SHA: `b27b736ed47b17df3081003af1a6ea3060f99c4e`.
-- One PR only: #21, branch `recovery/media3-playback-state-proof`.
-- PR #21 remains open and mergeable. Failed head `0e1e4320ccac6aa94eba2704fc5e0f1b98f1d694`; corrective exact head after this run: `43ecb48f1642e459c224b104feb89cb633c72e97`.
+- Run-start/current main SHA: `d0a74d289969150e04b620a597425c8be21bbe5a`.
+- One open PR only: #23 `recovery/media3-progress-runtime-proof`.
+- PR #23 failed head: `48ce325a076b8f72a9b885e3ea8cd7b32144e303`; corrective code head: `8594f781a703f049e5a694c0d64f34f8b23297d4`.
+- GitHub truth supersedes the previous stale handoff.
 
 ## Reference APK
 - Reference: `FaselhdV20.0.2.apk`; expected SHA-256 `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
-- The APK was not needed for this P0 runtime-test defect. No credentials, tokens, persistent cookies, signing secrets, ads/tracking, or access-control bypass material were introduced.
+- APK reinspection was not required for this isolated Media3 runtime-test defect.
 
 ## Work completed this run
-1. Re-read GitHub truth and PR #21 exact head instead of inheriting the previous report.
-2. Confirmed CI run `35578297030`: build SUCCESS; runtime-smoke FAILED only in `Emulator end-to-end smoke`; runtime reports were preserved.
-3. Downloaded and inspected `runtime-smoke-reports` artifact `10628991915` (42,097 bytes, SHA-256 `55c1de467bd6e3365303b57aa399cdd515d28cd3ad9243c34da07d21069911eb`).
-4. Root cause identified from XML + logcat: both tests timed out with `PlayerActivity not resumed` inside the new state assertion even though logcat proves `PlayerActivity` reached CREATED -> STARTED -> RESUMED, `ExoPlayerImpl` initialized, codecs were engaged, and PlayerView visibility assertion ran. The defect was the test helper calling Espresso from `runOnMainSync`, then swallowing the resulting failure and returning null. It was not a production navigation regression.
-5. Fixed the regression test on the same PR: inspect `PlayerView.player` directly in an Espresso ViewAssertion and assert `playbackState != STATE_IDLE`; removed the unnecessary production-only runtime state accessors. Stable view IDs remain for deterministic instrumentation.
-6. Corrective exact head is `43ecb48f1642e459c224b104feb89cb633c72e97`; exact-head CI had not appeared yet at the end of this run, so the PR was not merged and no completion credit was added.
+1. Re-read repository, branches, PRs, recent commits, CI and this handoff.
+2. Inspected PR #23 exact-head CI run `35606539727`.
+3. Build job was green: Unit tests, Lint, Debug APK build and APK verification all passed.
+4. Runtime-smoke failed only in the new `Media3ProgressSmokeTest`. Job logs gave the exact root cause: `IllegalStateException: Player is accessed on the wrong thread`; instrumentation thread accessed an ExoPlayer whose application looper is main.
+5. Fixed the test on the same PR, not by rerunning blindly: ExoPlayer creation, commands, state reads and release now execute on the Android main/application looper through `runOnMainSync`; polling sleeps remain off-main so playback can advance.
+6. No production SafeHttp, playback policy, credentials, cookies, provider behavior or security boundary was weakened.
 
 ## Acceptance criteria / blockers
 ### P0
-- P0-1: OPEN for PR #21 until corrective exact-head build + runtime-smoke are green; merge immediately when green and re-read main.
-- P0-2: Catalog and Search deterministic paths to Details/Episodes -> Sources -> decision -> native PlayerView are already runtime-verified on merged main. Actual playback-state proof remains pending #21.
-- P0-3: provider contracts/transport/mapping/pagination and UI state handling are implemented/tested; authorized concrete live-provider runtime evidence remains OPEN.
-- P0-4: bounded HTTPS resolver is implemented/tested; live runtime resolver evidence remains OPEN.
-- P0-5: PlayerActivity/PlayerView lifecycle, error/retry and resume state are implemented. #21 now correctly tests that attached Media3 leaves STATE_IDLE. Decoded-frame/audio/progress proof remains OPEN even if #21 passes.
-- P0-6: Debug APK build/verification and emulator navigation smoke are proven. Physical-device smoke and deterministic decode/playback evidence remain OPEN.
+- P0-1: PR #23 remains OPEN until exact corrective-head build + runtime-smoke are green and mergeable.
+- P0-2 Player: rotation/lifecycle and non-IDLE preparation are already runtime-proven on main. PR #23 targets deterministic project-owned WAV playback: STATE_READY, positive duration and >=250 ms position advancement. Corrective head is awaiting CI.
+- P0-3 E2E: Catalog and Search reach Details/Episodes/Sources/decision/native Player at runtime; actual deterministic playback progress is not yet merged.
+- P0-4 Provider: contracts/transport/mapping/pagination/state handling exist; authorized concrete provider runtime evidence remains open.
+- P0-5 Resolver: bounded HTTPS decision layer exists/tests pass; authorized live resolver runtime evidence remains open.
+- P0-6 APK: build/metadata/secret hygiene and emulator navigation smoke are proven; physical-device evidence remains open.
 
 ### P1
-Movies/Series/Anime/Streaming live coverage, Favorites/History/Resume, Downloads, Settings/Profiles, and full Arabic/RTL/reference parity remain OPEN.
+Movies/Series/Anime/Streaming complete runtime coverage; Favorites/History/Resume; Downloads; Settings/Profiles; full Arabic/RTL/reference parity remain open.
 
 ### P2
-DNS-rebinding/IPv6 SSRF hardening, performance, dependency/security/license audit, accessibility and maintenance remain OPEN.
+IPv6/private/link-local/DNS-rebinding hardening, dependency/license audit, accessibility, performance and long-playback edge cases remain open.
 
 ## Honest weighted completion
 | Area | Weight | Evidence-level completion |
@@ -46,7 +47,7 @@ DNS-rebinding/IPv6 SSRF hardening, performance, dependency/security/license audi
 | Seasons/Episodes | 7% | 90% |
 | Sources/provider/pagination | 8% | 90% |
 | Resolver | 7% | 55% |
-| Native Media3 Player + UI/lifecycle | 10% | 75% |
+| Native Media3 Player + UI/lifecycle | 10% | 85% |
 | End-to-end Catalog/Search->Play integration | 10% | 90% |
 | Movies/Series/Anime/Streaming | 5% | 30% |
 | Favorites/History/Resume | 4% | 0% |
@@ -56,31 +57,34 @@ DNS-rebinding/IPv6 SSRF hardening, performance, dependency/security/license audi
 | Runtime/device smoke + edge cases | 2% | 75% |
 | Security/privacy/licenses/dependencies | 1% | 55% |
 
-- **Overall Verified Product Completion: 71.0%**.
-- **Current P0 Path Completion: 84.4%**.
-- **Runtime-Verified Completion: 20.0%**.
-- Percentages are unchanged this run because the corrective #21 head is not yet CI-proven or merged. The failure was diagnosed as a test defect, not counted as new product evidence.
+- **Overall Verified Product Completion: 72.0%**.
+- **Current P0 Path Completion: 86.0%**.
+- **Runtime-Verified Completion: 25.0%**.
+- **Beta Readiness: 68.0%**.
+- No credit is granted yet for the new playback-progress assertion because the corrective head is not CI-proven or merged.
 
 ## CI / artifacts
-- Failed PR #21 head: `0e1e4320ccac6aa94eba2704fc5e0f1b98f1d694`.
-- Android CI run `35578297030`: build SUCCESS; runtime-smoke FAILURE.
-- Runtime artifact: `runtime-smoke-reports`, ID `10628991915`, 42,097 bytes, SHA-256 `55c1de467bd6e3365303b57aa399cdd515d28cd3ad9243c34da07d21069911eb`.
-- Debug APK artifact: ID `10627979796`, 7,209,563 bytes, SHA-256 `52486cef849f72a2b3fc3328f81d4c05398514c3dbda48650eff0b4f415d552f`.
-- Corrective head awaiting CI: `43ecb48f1642e459c224b104feb89cb633c72e97`.
+- Failed exact head `48ce325a076b8f72a9b885e3ea8cd7b32144e303`, run `35606539727`.
+- build: SUCCESS.
+- runtime-smoke: FAILURE at `Media3ProgressSmokeTest` due wrong-thread access.
+- Debug APK artifact `10642695676`: 7,209,372 bytes; SHA-256 `c900c8423c29c9e62430cab1977ae81031bd69c7a87591d7092c3dc3bc5ff9f9`.
+- runtime reports artifact `10643135610`: 40,445 bytes; SHA-256 `81731fe0ceda4d1f428577bd5e9567723826e0a92b7948875239a7a99fd8339c`.
+- Corrective code head `8594f781a703f049e5a694c0d64f34f8b23297d4`; CI had not appeared at the observation point.
 
 ## Security / licensing
-- Clean-room implementation only; no credentials/API tokens/signing secrets/persistent cookies.
-- No DRM/CAPTCHA/paywall/access-control bypass, ads/tracking, or external-browser playback.
-- Production HTTPS validation was not weakened for testing.
+- Clean-room only. No credentials/API tokens/signing secrets/persistent cookies.
+- No DRM/CAPTCHA/paywall/access-control bypass, ads/tracking or external-browser playback.
+- Test fixture is generated project-owned PCM WAV and has no external media/provider dependency.
 
 ## ما لا يعمل بعد بصراحة
-- PR #21 corrective head is not yet CI-proven/merged.
-- No deterministic proof yet of decoded frame/audio or advancing playback position.
-- No verified authorized live-provider end-to-end configuration.
-- Favorites/History/Resume, Downloads, Settings/Profiles and full reference UI/RTL parity remain incomplete.
+- Corrective PR #23 head is not yet CI-proven or merged.
+- Deterministic actual playback progress is therefore not yet accepted evidence.
+- No verified authorized live-provider/resolver E2E path.
+- No physical-device smoke.
+- P1 product features listed above remain incomplete.
 
 ## أهداف التشغيل التالي
-1. Read exact-head CI for `43ecb48f...`; if green and mergeable, merge #21 immediately and re-read main.
-2. If runtime-smoke still fails, download the new report artifact and fix the exact assertion/root cause on the same PR; no blind reruns.
-3. After #21 is merged, add deterministic authorized/offline evidence for actual Media3 playback progress/decoded output without weakening production HTTPS validation.
-4. Continue remaining P0 provider/resolver runtime evidence before P1 cosmetics or low-value refactors.
+1. Read exact-head CI for PR #23; if build + runtime-smoke are green and mergeable, merge immediately and re-read main.
+2. If it fails, inspect the exact log/artifact and fix the root cause on the same PR, no blind rerun.
+3. After deterministic playback progress is merged, close authorized provider/resolver runtime evidence and connect it to the proven Catalog/Search -> Player path.
+4. Then prove Movies/Series/Anime/Streaming individually before lower-value UI polish.
