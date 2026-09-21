@@ -1,9 +1,10 @@
 package com.faselhd.restored.provider
 
 import com.faselhd.restored.network.SafeHttp
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
+import okhttp3.Call
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import org.junit.Assert.*
@@ -11,7 +12,7 @@ import org.junit.Test
 import java.io.IOException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 class ProviderTransportPolicyTest {
     @Test fun rejectsPrivateAndScriptEndpointsBeforeTransport() {
@@ -27,33 +28,32 @@ class ProviderTransportPolicyTest {
 
     @Test fun coroutineCancellationCancelsUnderlyingHttpCall() = runBlocking {
         val entered = CountDownLatch(1)
-        val observedCancellation = AtomicBoolean(false)
+        val capturedCall = AtomicReference<Call>()
+        val releaseInterceptor = CountDownLatch(1)
         val client = OkHttpClient.Builder().addInterceptor(Interceptor { chain ->
+            capturedCall.set(chain.call())
             entered.countDown()
-            val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3)
-            while (System.nanoTime() < deadline) {
-                if (chain.call().isCanceled()) {
-                    observedCancellation.set(true)
-                    throw IOException("Canceled")
-                }
-                Thread.sleep(10)
+            try {
+                releaseInterceptor.await(3, TimeUnit.SECONDS)
+                throw IOException("test interceptor released")
+            } catch (e: InterruptedException) {
+                Thread.currentThread().interrupt()
+                throw IOException("test interrupted", e)
             }
-            throw IOException("test timeout")
         }).build()
         val transport = ProviderTransport(client = client)
         val request = async { transport.get("https://example.org/slow") }
 
-        assertTrue("interceptor should receive the request", entered.await(1, TimeUnit.SECONDS))
-        request.cancel()
         try {
-            request.await()
-            fail("cancelled provider request must not return a transport result")
-        } catch (_: CancellationException) {
-            // expected
+            assertTrue("interceptor should receive the request", entered.await(1, TimeUnit.SECONDS))
+            request.cancelAndJoin()
+            val call = capturedCall.get()
+            assertNotNull("test must capture the exact OkHttp call", call)
+            assertTrue("coroutine cancellation must cancel the exact OkHttp call", call.isCanceled())
+        } finally {
+            releaseInterceptor.countDown()
+            client.dispatcher.executorService.shutdownNow()
+            client.connectionPool.evictAll()
         }
-
-        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(1)
-        while (!observedCancellation.get() && System.nanoTime() < deadline) Thread.sleep(10)
-        assertTrue("coroutine cancellation must cancel the OkHttp call", observedCancellation.get())
     }
 }
