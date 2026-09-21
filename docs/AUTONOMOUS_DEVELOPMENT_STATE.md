@@ -4,31 +4,30 @@ Last updated: 2026-09-21
 
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Run-start main SHA: `4de6b94ab341cefbf67a20ed43783e2d55cfe524`.
-- PR #24 exact head `759ab734b5e678d4871bcb8a661f007c9c788af1` passed Android CI run `35612607463` and was squash-merged.
-- End/current main SHA after merge: `096f1e481cc225b09cd5590723750dafcf0dd226`.
-- One open PR only: #25, branch `recovery/provider-cancellable-transport`; code head before this handoff update `9502eae91e19284e573fde70999f432d07268350`.
+- Run-start/current main SHA: `096f1e481cc225b09cd5590723750dafcf0dd226`.
+- One open PR only: #25, branch `recovery/provider-cancellable-transport`.
+- Failed exact head: `2aeb2c245c952ad7732f109cecbf708ca8e082c3`; corrective test code head: `6a9c615335129362817432813b3587c34c812f48`.
 
 ## Reference APK
 - Reference: `FaselhdV20.0.2.apk`; expected SHA-256 `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
-- APK reinspection was not required for this provider-lifecycle slice; no recovered host/token/cookie/credential was introduced.
+- APK reinspection was not required for this isolated transport-cancellation test defect; no recovered endpoint, token, cookie, credential or bypass material was introduced.
 
 ## Work completed this run
-1. Re-read GitHub truth and verified #24 exact-head CI was fully green and mergeable, then merged it immediately.
-2. Re-read main at `096f1e48...`; bounded exponential retry for transient provider page failures is now merged, with permanent fail-fast, max attempts and coroutine-cancellation regression coverage.
-3. Identified the next P0 provider lifecycle gap: `ProviderTransport.get()` used blocking `Call.execute()` inside `Dispatchers.IO`; cancelling the coroutine did not actively cancel the underlying in-flight OkHttp call.
-4. Opened only PR #25 from exact main and replaced blocking execute with OkHttp `enqueue()` bridged through `suspendCancellableCoroutine`.
-5. Wired coroutine cancellation directly to `Call.cancel()`, while preserving SafeHttp normalization, disabled redirects, timeouts and credential-free requests.
-6. Added a deterministic unit regression test with an in-process OkHttp interceptor proving coroutine cancellation is observed by the underlying HTTP call. No real network/provider is contacted by the test.
+1. Re-read GitHub truth: main, branches, PR #25, recent commits, handoff and exact-head Actions.
+2. Exact-head run `35619346885`: runtime-smoke SUCCESS; build FAILURE only at unit test `ProviderTransportPolicyTest.coroutineCancellationCancelsUnderlyingHttpCall`; 54 tests ran, one failed. Lint/APK steps were skipped after the unit failure.
+3. Pulled the build job log rather than rerunning blindly. Production `ProviderTransport` still uses `suspendCancellableCoroutine`, `enqueue()` and `invokeOnCancellation { call.cancel() }` correctly.
+4. Root issue was the regression test's indirect polling assertion: it waited for the interceptor worker to observe cancellation rather than asserting the exact captured OkHttp Call state after coroutine cancellation joined.
+5. Reworked the test deterministically on the same PR: capture the exact `Call`, cancel and join the coroutine, assert `Call.isCanceled()` directly, then release the blocking interceptor and clean up dispatcher/connection pool. This tests the intended contract without a real provider/network dependency.
+6. No production security boundary or transport policy was weakened.
 
 ## Acceptance criteria / blockers
 ### P0
-- P0-1: #24 CLOSED/MERGED. #25 is the only open PR and must pass exact-head CI + be mergeable before merge.
-- P0-2 Player: deterministic owned-fixture playback reaches READY and advances >=250 ms on emulator; rotation/lifecycle are runtime-proven. Physical-device/long-playback remain open.
+- P0-1: #25 remains OPEN until corrective exact-head Unit/Lint/APK/runtime-smoke are green and the PR is mergeable; then merge immediately and re-read main.
+- P0-2 Player: deterministic owned-fixture Media3 playback reaches READY and advances >=250 ms on emulator; rotation/lifecycle are runtime-proven. Physical-device/long-playback remain open.
 - P0-3 E2E: deterministic Catalog/Search -> Details/Episodes -> Sources -> decision -> native Player is runtime-proven. Authorized concrete provider/resolver E2E remains OPEN.
-- P0-4 Provider: contracts/transport/mapping/pagination/loading-error-empty/retry exist; bounded retry is merged. #25 closes active cancellation of in-flight HTTP work if CI proves it. Authorized concrete provider runtime evidence remains OPEN.
+- P0-4 Provider: contracts/transport/mapping/pagination/loading-error-empty/retry exist; bounded retry is merged. #25 targets active cancellation of in-flight HTTP work; corrective test awaits CI. Authorized concrete provider runtime evidence remains OPEN.
 - P0-5 Resolver: bounded HTTPS decision layer exists/tests pass; authorized runtime resolver evidence remains OPEN.
-- P0-6 APK: build/metadata/secret hygiene and emulator smoke are proven. Physical-device evidence remains OPEN.
+- P0-6 APK: merged main has build/metadata/secret hygiene and emulator evidence. #25 has no accepted APK artifact until corrective CI passes.
 
 ### P1
 Movies/Series/Anime/Streaming independent runtime coverage; Favorites/History/Resume; Downloads; Settings/Profiles; full Arabic/RTL/reference parity remain OPEN.
@@ -61,27 +60,28 @@ IPv6/private/link-local/DNS-rebinding hardening, dependency/license audit, acces
 - **Current P0 Path Completion: 88.5%**.
 - **Runtime-Verified Completion: 32.0%**.
 - **Beta Readiness: 70.0%**.
-- #24 improves verified P0 reliability but does not justify raising the weighted provider category above 90% without authorized runtime evidence. #25 receives no completion credit until exact-head CI passes.
+- No new completion credit this run: #25 corrective head is not yet exact-head CI-proven/merged. The failed unit assertion is treated as a test defect, not accepted product evidence.
 
 ## CI / artifacts
-- PR #24 green run: `35612607463`; merged main `096f1e481cc225b09cd5590723750dafcf0dd226`.
-- Latest previously verified Debug APK/runtime evidence remains from the merged deterministic Media3 run; #25 must produce its own exact-head build artifact before merge.
-- PR #25 code head before handoff update: `9502eae91e19284e573fde70999f432d07268350`; CI had not appeared at the observation point.
+- Failed PR #25 exact head: `2aeb2c245c952ad7732f109cecbf708ca8e082c3`.
+- Android CI run `35619346885`: build FAILURE at Unit tests; runtime-smoke SUCCESS.
+- Corrective test code head: `6a9c615335129362817432813b3587c34c812f48`; this handoff update advances the branch again, so always fetch the PR exact head before judging CI.
+- No accepted new Debug APK artifact from failed build because APK build/upload steps were skipped.
 
 ## Security / licensing
 - Clean-room only. No credentials/API tokens/signing secrets/persistent cookies.
 - No DRM/CAPTCHA/paywall/access-control bypass, ads/tracking or external-browser playback.
-- Provider transport remains fail-closed through SafeHttp; redirects remain disabled; cancellation now targets resource cleanup rather than bypass behavior.
+- SafeHttp/redirect/timeouts remain unchanged; cancellation is lifecycle/resource cleanup only.
 
 ## ما لا يعمل بعد بصراحة
-- PR #25 is not yet exact-head CI-proven/merged.
+- PR #25 corrective head is not yet CI-proven/merged.
 - No verified authorized concrete provider/resolver E2E path yet.
 - No physical-device smoke or long-duration playback proof.
 - Movies/Series/Anime/Streaming are not all runtime-proven independently.
 - Favorites/History/Resume, Downloads, Settings/Profiles and full Arabic/RTL/reference parity remain incomplete.
 
 ## أهداف التشغيل التالي
-1. Inspect exact-head CI for #25; if failed, fix from logs on the same branch; if green and mergeable, merge immediately and re-read main.
-2. Build deterministic authorized provider HTTP-boundary runtime evidence without recovered endpoints/secrets, covering transport -> decode -> domain and loading/error/empty/retry/cancellation.
-3. Connect that provider evidence to the already-proven Catalog/Search -> native Media3 runtime path, then add bounded resolver runtime evidence.
-4. Prove Movies/Series/Anime/Streaming independently before lower-value UI polish.
+1. Inspect exact-head CI for #25; merge immediately if Unit/Lint/APK/runtime-smoke are green and mergeable. If it fails, use the exact log and fix on the same branch.
+2. After merge, build deterministic authorized provider HTTP-boundary evidence covering transport -> decode -> domain plus loading/error/empty/retry/cancellation, without recovered hosts/secrets.
+3. Connect provider evidence to the proven Catalog/Search -> native Media3 path and then prove bounded resolver runtime behavior.
+4. Prove Movies/Series/Anime/Streaming independently before UI polish.
