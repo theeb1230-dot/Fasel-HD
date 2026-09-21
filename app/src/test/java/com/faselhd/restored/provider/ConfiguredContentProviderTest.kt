@@ -7,7 +7,7 @@ import com.faselhd.restored.core.PlaybackClassifier
 import com.faselhd.restored.core.PlaybackKind
 import com.faselhd.restored.core.PlaybackSource
 import com.faselhd.restored.playback.PlaybackDecision
-import com.faselhd.restored.playback.PlaybackDecisionEngine
+import com.faselhd.restored.playback.PlaybackPipeline
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.Protocol
@@ -91,7 +91,7 @@ class ConfiguredContentProviderTest {
         val safeSources = ProviderGateway(configured).sources(item.id, "e1")
         assertEquals(1, safeSources.size)
         assertEquals(PlaybackKind.HLS, safeSources.single().kind)
-        assertTrue(PlaybackDecisionEngine.decide(safeSources.single()) is PlaybackDecision.Native)
+        assertTrue(PlaybackPipeline.prepare(safeSources.single()) is PlaybackDecision.Native)
     }
 
     @Test fun invalidPayloadIsNonRetryable() = runBlocking {
