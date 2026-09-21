@@ -1,33 +1,35 @@
 # Fasel HD autonomous development state
 
-Last updated: 2026-09-20
+Last updated: 2026-09-21
 
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Run-start/end main SHA: `1c0644d1dd8cd9b9f739680ea4386adcc347ddcb`.
-- No PR was open at run start. Single open PR at run end: #17 `recovery/runtime-ci-smoke`.
-- PR #17 code head before this documentation commit: `1b4293c782ce8b5f200050275e0e1332906cb5f6`; newest exact head must pass CI before merge.
+- Run-start/end main SHA: `32bf410b81e49384a58810b072fab6debaa24b03` (unchanged while PR #18 is pending).
+- Single open PR: #18 `recovery/runtime-emulator-smoke`; no second PR may be opened.
+- Evaluated PR head at run start: `6a49d3cd957a95f50564a336a39e6112f7a4b0b3`; Android CI run `35539045696`: build SUCCESS, runtime-smoke FAILURE.
+- Production corrective commit this run: `8347a974aabbed46ab1e2a23065a1362b4d37600`. This documentation commit advances the head again; newest exact-head CI must pass before merge.
 
 ## Reference APK
 - File: `FaselhdV20.0.2.apk`; expected SHA-256 `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
-- Reference APK was not required in this run. No recovered secrets may enter source/logs/tests/docs.
+- Reference APK was not needed for this Android 15 layout/runtime defect. No recovered secrets may enter source/logs/tests/docs.
 
 ## Work completed this run
-1. Re-read GitHub truth: main, all branches, open PRs, recent Actions/jobs/artifacts, handoff and current application code.
-2. Confirmed main CI run `35489317891` succeeded on exact main: unit tests, lint, debug APK build and artifact upload all passed.
-3. Confirmed artifact `fasel-hd-debug-apk` exists, is non-zero (7,208,650 bytes), is unexpired, and belongs to exact main SHA.
-4. Ranked blockers: P0-6 lacked reproducible APK metadata/integrity/placeholder evidence; P0-2 still lacks device runtime; P0-3 still lacks an authorized concrete live-provider configuration.
-5. Opened PR #17 and added a fail-closed post-build APK verification gate before upload: non-zero APK, `aapt` package/version/min/target SDK checks, ZIP integrity, SHA-256 output, and a narrow scan for common placeholders/embedded credential patterns.
-6. No provider endpoint, credential, cookie, browser playback, DRM/CAPTCHA/paywall bypass, ad or tracking behavior was added.
+1. Re-read GitHub truth for PR #18 and exact head, run `35539045696`, jobs and artifacts. Build remained green; only emulator runtime smoke failed.
+2. Downloaded and unpacked preserved artifact `runtime-smoke-reports` ID `10613757815` (23,426 bytes; SHA-256 `f0f34318a3012836a14cc96bb96c441b1fa62dee894fe79436d3e35a73a9b0c7`) instead of guessing from job metadata.
+3. The new `dumpsys` assertion proved the resumed component after Play was `com.android.launcher3/.uioverrides.QuickstepLauncher`, not PlayerActivity.
+4. Logcat identified the root cause immediately around the Play touch: Espresso reports a click on `playButton`, then Launcher logs `LAUNCHER_TASKBAR_HOME_BUTTON_TAP`; MainActivity transitions PAUSED -> STOPPED and Home becomes foreground. There is no app fatal exception and no evidence that PlayerActivity was launched.
+5. Re-read the main layout. `playButton` is the bottom-most full-width control. On targetSdk 35 / Android 15, enforced edge-to-edge allows content behind system navigation/taskbar unless insets are handled, making the bottom control overlap the Home hit target on the API 35 emulator.
+6. Fixed production `MainActivity` to consume system-bar insets on the content root using `ViewCompat` / `WindowInsetsCompat`, keeping the Play control outside navigation/taskbar hit targets. This addresses the proven UI/runtime defect rather than weakening the test.
+7. No provider/resolver/player/network/security semantics changed. No blind rerun was performed.
 
 ## Acceptance criteria / blockers
 ### P0
-- P0-1: #17 is the only open PR; merge only on newest exact-head green CI + mergeable.
-- P0-2: deterministic Catalog/Search -> Details/Episodes -> Sources -> playback decision -> internal Native Player has integration/build evidence; device runtime remains OPEN.
+- P0-1: #18 remains the only open PR; merge only on newest exact-head green build + runtime-smoke and mergeable state.
+- P0-2: deterministic Catalog/Search -> Details/Episodes -> Sources -> playback decision -> internal Native Player has integration/build evidence. Emulator runtime acceptance remains OPEN until the system-inset fix passes newest-head smoke.
 - P0-3: provider transport/decode/mapping/adapter/pagination and UI loading/content/empty/error/retry/load-more/cancellation are merged and CI verified. Authorized concrete live-provider configuration remains OPEN.
-- P0-4: bounded resolver is merged and CI verified; it accepts only safe HTTPS native candidates and does not perform protected-page extraction. Runtime evidence remains OPEN.
-- P0-5: Media3 player error/retry and position/play-state lifecycle handling are merged and CI/build verified. Device runtime remains OPEN.
-- P0-6: non-zero exact-main artifact is VERIFIED. Reproducible package/version/SDK/integrity/placeholder gate is IMPLEMENTED in #17 but receives no score until exact-head CI passes. Emulator/device smoke remains OPEN.
+- P0-4: bounded resolver is merged and CI verified; safe HTTPS native candidates only. Runtime resolver evidence remains OPEN.
+- P0-5: Media3 player error/retry and position/play-state lifecycle handling are merged and CI/build verified. Actual media decode/playback runtime remains OPEN.
+- P0-6: exact-main APK is non-zero and package/version/SDK/integrity/placeholder gate is merged and CI verified. Emulator smoke remains OPEN pending corrected exact-head CI.
 
 ### P1
 Movies/Series/Anime/Streaming complete live flows, Favorites/History/Resume, Downloads, Settings/Profiles, and full Arabic/RTL/reference parity remain OPEN.
@@ -36,7 +38,7 @@ Movies/Series/Anime/Streaming complete live flows, Favorites/History/Resume, Dow
 DNS-rebinding/IPv6 SSRF hardening, performance, dependency/security/license audit, accessibility and maintenance remain OPEN.
 
 ## Honest weighted completion
-Only merged or exact-head-green evidence is credited. Pending #17 changes receive no credit.
+Unmerged #18 changes receive no credit.
 
 | Area | Weight | Evidence-level completion |
 |---|---:|---:|
@@ -59,14 +61,15 @@ Only merged or exact-head-green evidence is credited. Pending #17 changes receiv
 | Security/privacy/licenses/dependencies | 1% | 55% |
 
 - **Overall Verified Product Completion: 56.4%**.
-- **Current P0 Path Completion: 67.7%** (weighted over P0 product areas 1-10, not an inherited prior estimate).
-- **Runtime-Verified Completion: 0.0%**.
-- Completion was recalculated from current GitHub evidence. It is lower than a prior reported 57.8% because the rubric caps implementation/integration without device runtime evidence; no score is preserved merely because it was reported previously.
+- **Current P0 Path Completion: 67.7%** (weighted over product areas 1-10).
+- **Runtime-Verified Completion: 0.0%** until corrected emulator smoke passes on newest exact PR head and is merged.
+- Scores remain unchanged because the production fix is unmerged and has not yet passed exact-head CI.
 
 ## CI / artifacts
-- Exact main CI run `35489317891`: SUCCESS; unit tests, lint, build and upload passed.
-- Exact-main artifact ID `10598613647`, name `fasel-hd-debug-apk`, size 7,208,650 bytes, artifact digest `sha256:39710fa92507c734b75b34e162aa5fd0438e08c1a0ee31a57819b1ed694d098e`.
-- PR #17 exact-head CI must be checked after this documentation commit. Build artifact evidence is not runtime/device evidence.
+- Latest evaluated run: `35539045696`, evaluated head `6a49d3cd957a95f50564a336a39e6112f7a4b0b3`; build SUCCESS, runtime-smoke FAILURE.
+- Runtime artifact ID `10613757815`, `runtime-smoke-reports`, 23,426 bytes, SHA-256 `f0f34318a3012836a14cc96bb96c441b1fa62dee894fe79436d3e35a73a9b0c7`.
+- Exact failure evidence: Android reported Launcher as top/resumed activity; logcat recorded `LAUNCHER_TASKBAR_HOME_BUTTON_TAP` immediately after Espresso touched the bottom `playButton`, followed by MainActivity PAUSED/STOPPED.
+- Production system-inset corrective commit: `8347a974aabbed46ab1e2a23065a1362b4d37600`; newest exact-head CI not yet observed at this state update.
 
 ## Security / licensing
 - Clean-room implementation only; no credentials/API tokens/signing secrets/persistent cookies.
@@ -75,7 +78,7 @@ Only merged or exact-head-green evidence is credited. Pending #17 changes receiv
 - DNS-resolution/IPv6 SSRF hardening remains a known P2 gap.
 
 ## أهداف التشغيل التالي
-1. Inspect #17 newest exact-head CI; merge immediately if green and mergeable, otherwise retrieve exact logs and fix root cause on the same branch.
-2. After merge, use the verified APK for emulator/device smoke of launch and deterministic Catalog/Search -> Details/Episodes -> Sources -> Native Media3 playback; do not count build-only evidence as runtime.
-3. If runtime environment is unavailable, continue the highest independent P0 work on the same PR only if file ownership is non-conflicting; otherwise preserve the one-PR rule.
-4. Keep authorized live-provider configuration as an explicit blocker; do not invent or recover protected endpoints or credentials.
+1. Inspect #18 newest exact-head CI; merge immediately if build and runtime-smoke are green and the PR is mergeable.
+2. If runtime-smoke remains red, download the preserved report and fix only the newly proven cause on #18.
+3. Once emulator navigation smoke is merged, add deterministic authorized Media3 decode/playback runtime evidence without external-network dependence.
+4. Keep authorized live-provider configuration explicit and do not invent protected endpoints, tokens or cookies.

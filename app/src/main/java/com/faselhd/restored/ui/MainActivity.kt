@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.faselhd.restored.R
 import com.faselhd.restored.core.PlaybackClassifier
@@ -35,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        applySystemBarInsets()
         flow = ContentFlow(ProviderGateway(DemoProvider()))
         results = findViewById(R.id.resultsList)
         status = findViewById(R.id.statusText)
@@ -51,6 +54,17 @@ class MainActivity : AppCompatActivity() {
         results.setOnItemClickListener { _, _, position, _ -> loadDetails(items[position]) }
         play.setOnClickListener { selected?.let(::playItem) }
         loadCatalog()
+    }
+
+    /** Android 15 enforces edge-to-edge for targetSdk 35. Keep bottom controls out of system navigation/taskbar hit targets. */
+    private fun applySystemBarInsets() {
+        val content = findViewById<View>(android.R.id.content)
+        ViewCompat.setOnApplyWindowInsetsListener(content) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
+        ViewCompat.requestApplyInsets(content)
     }
 
     private fun loadCatalog() {
