@@ -13,7 +13,7 @@ import com.faselhd.restored.domain.Page
 class ConfiguredContentProvider(
     private val pageLoader: ProviderPageLoader,
     private val catalogUrl: (MediaType, Int) -> String,
-    private val searchUrl: (String, Int) -> String,
+    private val searchUrl: (String, MediaType, Int) -> String,
     private val detailsLoader: suspend (String, MediaType) -> MediaDetails,
     private val sourcesLoader: suspend (String, String?) -> List<PlaybackSource>,
     private val retryPolicy: ProviderRetryPolicy = ProviderRetryPolicy()
@@ -21,9 +21,16 @@ class ConfiguredContentProvider(
     override suspend fun catalog(type: MediaType, page: Int): Page<MediaSummary> =
         requirePage(retryPolicy.execute { pageLoader.mediaPage(catalogUrl(type, page), type) })
 
-    override suspend fun search(query: String, page: Int): Page<MediaSummary> {
+    override suspend fun search(query: String, page: Int): Page<MediaSummary> =
+        search(query, MediaType.MOVIE, page)
+
+    /**
+     * Typed search used by recovered Movies/Series/Anime flows. The legacy ContentProvider contract
+     * remains movie-default for compatibility, while callers that know the section preserve its type.
+     */
+    suspend fun search(query: String, type: MediaType, page: Int = 1): Page<MediaSummary> {
         require(query.isNotBlank()) { "query must not be blank" }
-        return requirePage(retryPolicy.execute { pageLoader.mediaPage(searchUrl(query, page), MediaType.MOVIE) })
+        return requirePage(retryPolicy.execute { pageLoader.mediaPage(searchUrl(query, type, page), type) })
     }
 
     override suspend fun details(id: String, type: MediaType): MediaDetails = detailsLoader(id, type)
