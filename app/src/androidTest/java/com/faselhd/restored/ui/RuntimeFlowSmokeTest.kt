@@ -1,6 +1,7 @@
 package com.faselhd.restored.ui
 
 import android.os.SystemClock
+import androidx.media3.common.Player
 import androidx.media3.ui.PlayerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
@@ -17,6 +18,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.faselhd.restored.R
 import org.hamcrest.Matchers.containsString
+import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -32,7 +34,7 @@ class RuntimeFlowSmokeTest {
             awaitTextContaining(R.id.detailsText, "S1E1")
             awaitEnabled(R.id.playButton)
             onView(withId(R.id.playButton)).perform(click())
-            assertNativePlayerSurface()
+            assertNativePlayerSurfaceAndPreparedState()
         }
     }
 
@@ -47,14 +49,27 @@ class RuntimeFlowSmokeTest {
             awaitTextContaining(R.id.detailsText, "S1E1")
             awaitEnabled(R.id.playButton)
             onView(withId(R.id.playButton)).perform(click())
-            assertNativePlayerSurface()
+            assertNativePlayerSurfaceAndPreparedState()
         }
     }
 
-    private fun assertNativePlayerSurface() {
+    private fun assertNativePlayerSurfaceAndPreparedState() {
         awaitResumedActivity("com.faselhd.restored/.ui.PlayerActivity")
         awaitAssertion {
-            onView(isAssignableFrom(PlayerView::class.java)).check(matches(isDisplayed()))
+            onView(withId(PlayerActivity.PLAYER_VIEW_ID)).check(matches(isDisplayed()))
+        }
+        awaitAssertion {
+            onView(withId(PlayerActivity.PLAYER_VIEW_ID)).check { matched, _ ->
+                val playerView = matched as? PlayerView
+                    ?: throw AssertionError("Expected Media3 PlayerView")
+                val player = playerView.player
+                    ?: throw AssertionError("PlayerView has no attached Media3 player")
+                val state = player.playbackState
+                assertTrue(
+                    "Media3 must leave STATE_IDLE after prepare; actual state=$state position=${player.currentPosition}",
+                    state != Player.STATE_IDLE
+                )
+            }
         }
     }
 

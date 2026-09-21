@@ -30,12 +30,14 @@ class PlayerActivity : AppCompatActivity() {
         resumePositionMs = savedInstanceState?.getLong(STATE_POSITION_MS) ?: 0L
         resumePlayWhenReady = savedInstanceState?.getBoolean(STATE_PLAY_WHEN_READY) ?: true
 
-        playerView = PlayerView(this)
+        playerView = PlayerView(this).apply { id = PLAYER_VIEW_ID }
         errorView = TextView(this).apply {
+            id = ERROR_VIEW_ID
             gravity = Gravity.CENTER
             visibility = View.GONE
         }
         retryButton = Button(this).apply {
+            id = RETRY_BUTTON_ID
             text = "إعادة المحاولة"
             visibility = View.GONE
             setOnClickListener { retryPlayback() }
@@ -125,6 +127,9 @@ class PlayerActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_URI = "playback_uri"
         const val EXTRA_KIND = "playback_kind"
+        const val PLAYER_VIEW_ID = 0x5f000001
+        const val ERROR_VIEW_ID = 0x5f000002
+        const val RETRY_BUTTON_ID = 0x5f000003
         private const val STATE_POSITION_MS = "player_position_ms"
         private const val STATE_PLAY_WHEN_READY = "player_play_when_ready"
     }
