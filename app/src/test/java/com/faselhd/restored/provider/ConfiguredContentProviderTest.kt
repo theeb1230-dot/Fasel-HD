@@ -25,7 +25,7 @@ class ConfiguredContentProviderTest {
         return ConfiguredContentProvider(
             pageLoader = ProviderPageLoader(ProviderTransport(client = client)),
             catalogUrl = { type, page -> "https://example.org/catalog/${type.name.lowercase()}?page=$page" },
-            searchUrl = { query, page -> "https://example.org/search?q=$query&page=$page" },
+            searchUrl = { query, type, page -> "https://example.org/search/${type.name.lowercase()}?q=$query&page=$page" },
             detailsLoader = { id, type -> MediaDetails(MediaSummary(id, "fixture", type)) },
             sourcesLoader = { _, _ -> emptyList() }
         )
@@ -37,6 +37,25 @@ class ConfiguredContentProviderTest {
         assertEquals(2, page.page)
         assertTrue(page.hasNext)
         assertEquals("m1", page.items.single().id)
+        assertEquals(MediaType.MOVIE, page.items.single().type)
+    }
+
+    @Test fun typedSearchPreservesSeriesType() = runBlocking {
+        val json = """{"current_page":1,"next_page_url":null,"data":[{"id":"s1","title":"Series One"}]}"""
+        val page = provider(json).search("series", MediaType.SERIES, 1)
+        assertEquals(MediaType.SERIES, page.items.single().type)
+        assertEquals("s1", page.items.single().id)
+    }
+
+    @Test fun typedSearchPreservesAnimeType() = runBlocking {
+        val json = """{"current_page":1,"next_page_url":null,"data":[{"id":"a1","title":"Anime One"}]}"""
+        val page = provider(json).search("anime", MediaType.ANIME, 1)
+        assertEquals(MediaType.ANIME, page.items.single().type)
+    }
+
+    @Test fun legacySearchRemainsMovieDefault() = runBlocking {
+        val json = """{"current_page":1,"next_page_url":null,"data":[{"id":"m1","title":"Movie One"}]}"""
+        val page = provider(json).search("movie", 1)
         assertEquals(MediaType.MOVIE, page.items.single().type)
     }
 
