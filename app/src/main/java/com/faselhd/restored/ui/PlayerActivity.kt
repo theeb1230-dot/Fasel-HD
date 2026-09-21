@@ -70,9 +70,6 @@ class PlayerActivity : AppCompatActivity() {
         super.onStop()
     }
 
-    internal fun runtimePlaybackState(): Int? = player?.playbackState
-    internal fun runtimePlaybackPositionMs(): Long = player?.currentPosition ?: resumePositionMs
-
     private fun startPlayback() {
         val uri = intent.getStringExtra(EXTRA_URI) ?: return finish()
         val kind = intent.getStringExtra(EXTRA_KIND)?.let { runCatching { PlaybackKind.valueOf(it) }.getOrNull() }
