@@ -39,15 +39,32 @@ jobs:
           test -s "$APK"
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
           test -x "$AAPT"
+
           BADGING="$($AAPT dump badging "$APK")"
           printf '%s\n' "$BADGING"
           grep -q "package: name='com.faselhd.restored' versionCode='1' versionName='0.1.0-restore'" <<<"$BADGING"
           grep -q "sdkVersion:'23'" <<<"$BADGING"
           grep -q "targetSdkVersion:'35'" <<<"$BADGING"
+
+          PERMISSIONS="$($AAPT dump permissions "$APK")"
+          printf '%s\n' "$PERMISSIONS"
+          grep -q "android.permission.INTERNET" <<<"$PERMISSIONS"
+          grep -q "android.permission.ACCESS_NETWORK_STATE" <<<"$PERMISSIONS"
+          if grep -Eiq 'android.permission.(READ_CONTACTS|WRITE_CONTACTS|READ_SMS|SEND_SMS|RECORD_AUDIO|CAMERA|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|READ_CALL_LOG|WRITE_CALL_LOG|CALL_PHONE|REQUEST_INSTALL_PACKAGES|SYSTEM_ALERT_WINDOW)' <<<"$PERMISSIONS"; then
+            echo "Unexpected sensitive permission detected in built APK" >&2
+            exit 1
+          fi
+
+          MANIFEST_TREE="$($AAPT dump xmltree "$APK" AndroidManifest.xml)"
+          grep -q 'android:usesCleartextTraffic(0x010104ec)=\(type 0x12\)0x0' <<<"$MANIFEST_TREE"
+          grep -q 'E: activity' <<<"$MANIFEST_TREE"
+          grep -q 'com.faselhd.restored.ui.PlayerActivity' <<<"$MANIFEST_TREE"
+          grep -q 'com.faselhd.restored.ui.MainActivity' <<<"$MANIFEST_TREE"
+
           unzip -t "$APK"
           sha256sum "$APK"
-          if unzip -p "$APK" classes.dex | strings | grep -Eiq '(YOUR_API_KEY|REPLACE_ME|Bearer[[:space:]]+[A-Za-z0-9._~-]{20,}|api[_-]?key[=:][[:space:]]*[A-Za-z0-9._~-]{12,}|password[=:][[:space:]]*[^[:space:]]{8,})'; then
-            echo "Potential placeholder or embedded credential detected" >&2
+          if unzip -p "$APK" | strings | grep -Eiq '(YOUR_API_KEY|REPLACE_ME|Bearer[[:space:]]+[A-Za-z0-9._~-]{20,}|api[_-]?key[=:][[:space:]]*[A-Za-z0-9._~-]{12,}|password[=:][[:space:]]*[^[:space:]]{8,})'; then
+            echo "Potential placeholder or embedded credential detected anywhere in APK payload" >&2
             exit 1
           fi
       - uses: actions/upload-artifact@v4
