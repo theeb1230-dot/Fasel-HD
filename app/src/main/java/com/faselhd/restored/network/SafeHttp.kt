@@ -17,16 +17,26 @@ object SafeHttp {
         return uri.normalize().toASCIIString()
     }
 
+    /**
+     * Applies the same fail-closed address policy after DNS resolution. This is deliberately
+     * separate from URL normalization so callers can re-check every address at the actual
+     * connection boundary and reject public-name -> private-address rebinding.
+     */
+    fun isAllowedResolvedAddress(address: InetAddress): Boolean = !isBlockedAddress(address)
+
     private fun isBlockedLiteralAddress(host: String): Boolean {
         val literal = parseLiteralAddress(host) ?: return false
-        return literal.isAnyLocalAddress ||
-            literal.isLoopbackAddress ||
-            literal.isLinkLocalAddress ||
-            literal.isSiteLocalAddress ||
-            literal.isMulticastAddress ||
-            isIpv4Reserved(literal.address) ||
-            isIpv6Reserved(literal)
+        return isBlockedAddress(literal)
     }
+
+    private fun isBlockedAddress(address: InetAddress): Boolean =
+        address.isAnyLocalAddress ||
+            address.isLoopbackAddress ||
+            address.isLinkLocalAddress ||
+            address.isSiteLocalAddress ||
+            address.isMulticastAddress ||
+            isIpv4Reserved(address.address) ||
+            isIpv6Reserved(address)
 
     private fun parseLiteralAddress(host: String): InetAddress? {
         val ipv4 = host.split('.')
