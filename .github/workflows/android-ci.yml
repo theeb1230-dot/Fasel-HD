@@ -56,14 +56,18 @@ jobs:
           fi
 
           MANIFEST_TREE="$($AAPT dump xmltree "$APK" AndroidManifest.xml)"
-          grep -q 'android:usesCleartextTraffic(0x010104ec)=\(type 0x12\)0x0' <<<"$MANIFEST_TREE"
-          grep -q 'E: activity' <<<"$MANIFEST_TREE"
-          grep -q 'com.faselhd.restored.ui.PlayerActivity' <<<"$MANIFEST_TREE"
-          grep -q 'com.faselhd.restored.ui.MainActivity' <<<"$MANIFEST_TREE"
+          grep -Fq 'android:usesCleartextTraffic(0x010104ec)=(type 0x12)0x0' <<<"$MANIFEST_TREE"
+          grep -Fq 'com.faselhd.restored.ui.PlayerActivity' <<<"$MANIFEST_TREE"
+          grep -Fq 'com.faselhd.restored.ui.MainActivity' <<<"$MANIFEST_TREE"
 
           unzip -t "$APK"
           sha256sum "$APK"
-          if unzip -p "$APK" | strings | grep -Eiq '(YOUR_API_KEY|REPLACE_ME|Bearer[[:space:]]+[A-Za-z0-9._~-]{20,}|api[_-]?key[=:][[:space:]]*[A-Za-z0-9._~-]{12,}|password[=:][[:space:]]*[^[:space:]]{8,})'; then
+          PAYLOAD_STRINGS="$(mktemp)"
+          trap 'rm -f "$PAYLOAD_STRINGS"' EXIT
+          while IFS= read -r entry; do
+            unzip -p "$APK" "$entry" 2>/dev/null | strings >> "$PAYLOAD_STRINGS" || true
+          done < <(zipinfo -1 "$APK")
+          if grep -Eiq '(YOUR_API_KEY|REPLACE_ME|Bearer[[:space:]]+[A-Za-z0-9._~-]{20,}|api[_-]?key[=:][[:space:]]*[A-Za-z0-9._~-]{12,}|password[=:][[:space:]]*[^[:space:]]{8,})' "$PAYLOAD_STRINGS"; then
             echo "Potential placeholder or embedded credential detected anywhere in APK payload" >&2
             exit 1
           fi
