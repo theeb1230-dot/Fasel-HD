@@ -8,8 +8,10 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.*
 import org.junit.Test
 import java.util.concurrent.CountDownLatch
@@ -29,6 +31,20 @@ class ProviderTransportPolicyTest {
         assertEquals("https://example.org/api/catalog?page=2", SafeHttp.normalize("https://example.org/api/catalog?page=2"))
     }
 
+    @Test fun rejectsProviderBodyLargerThanConfiguredLimit() = runBlocking {
+        val request = Request.Builder().url("https://example.org/catalog").build()
+        val callFactory = ImmediateResponseCallFactory("123456".toResponseBody())
+        val transport = ProviderTransport(maxResponseBytes = 5, callFactory = callFactory)
+        assertEquals(TransportResult.Rejected("response_too_large"), transport.get(request.url.toString()))
+    }
+
+    @Test fun acceptsProviderBodyAtConfiguredLimit() = runBlocking {
+        val request = Request.Builder().url("https://example.org/catalog").build()
+        val callFactory = ImmediateResponseCallFactory("12345".toResponseBody())
+        val transport = ProviderTransport(maxResponseBytes = 5, callFactory = callFactory)
+        assertEquals(TransportResult.Success("12345", 200), transport.get(request.url.toString()))
+    }
+
     @Test fun coroutineCancellationCancelsUnderlyingHttpCall() = runBlocking {
         val started = CountDownLatch(1)
         val cancelled = CountDownLatch(1)
@@ -38,8 +54,6 @@ class ProviderTransportPolicyTest {
         }
         val client = OkHttpClient.Builder().build()
         val transport = ProviderTransport(client = client, callFactory = callFactory)
-        // UNDISPATCHED guarantees ProviderTransport reaches enqueue() before this test thread waits.
-        // The fake call never invokes its callback, so the coroutine remains suspended until cancelled.
         val request = async(start = CoroutineStart.UNDISPATCHED) {
             transport.get("https://example.org/slow")
         }
@@ -53,6 +67,30 @@ class ProviderTransportPolicyTest {
         } finally {
             client.dispatcher.executorService.shutdownNow()
             client.connectionPool.evictAll()
+        }
+    }
+
+    private class ImmediateResponseCallFactory(private val body: okhttp3.ResponseBody) : Call.Factory {
+        override fun newCall(request: Request): Call = object : Call {
+            override fun request() = request
+            override fun execute(): Response = error("async only")
+            override fun enqueue(responseCallback: Callback) {
+                responseCallback.onResponse(
+                    this,
+                    Response.Builder()
+                        .request(request)
+                        .protocol(Protocol.HTTP_1_1)
+                        .code(200)
+                        .message("OK")
+                        .body(body)
+                        .build(),
+                )
+            }
+            override fun cancel() = Unit
+            override fun isExecuted() = true
+            override fun isCanceled() = false
+            override fun timeout() = okio.Timeout.NONE
+            override fun clone(): Call = this
         }
     }
 
