@@ -27,9 +27,9 @@ class PlayerLifecycleRuntimeTest {
         }
 
         ActivityScenario.launch<PlayerActivity>(intent).use { scenario ->
-            await("initial player attachment") { activityPlayer(scenario) != null }
-            await("initial READY", 20_000L) { activityPlayer(scenario)?.playbackState == Player.STATE_READY }
-            await("initial progress") { (activityPlayer(scenario)?.currentPosition ?: 0L) >= 250L }
+            await("initial player attachment") { playerSnapshot(scenario).attached }
+            await("initial READY", 20_000L) { playerSnapshot(scenario).playbackState == Player.STATE_READY }
+            await("initial progress") { playerSnapshot(scenario).currentPosition >= 250L }
 
             var pausedAt = 0L
             scenario.onActivity { activity ->
@@ -38,37 +38,47 @@ class PlayerLifecycleRuntimeTest {
                 pausedAt = player.currentPosition
             }
             SystemClock.sleep(300)
-            val afterPause = activityPlayer(scenario)?.currentPosition ?: pausedAt
+            val afterPause = playerSnapshot(scenario).currentPosition
             assertTrue("pause must stop meaningful advancement", afterPause <= pausedAt + 150L)
 
             scenario.onActivity { activity ->
                 activity.findViewById<androidx.media3.ui.PlayerView>(PlayerActivity.PLAYER_VIEW_ID).player!!.play()
             }
-            await("resume progress") { (activityPlayer(scenario)?.currentPosition ?: 0L) >= afterPause + 200L }
-            val beforeRotation = activityPlayer(scenario)!!.currentPosition
+            await("resume progress") { playerSnapshot(scenario).currentPosition >= afterPause + 200L }
+            val beforeRotation = playerSnapshot(scenario).currentPosition
 
             scenario.recreate()
-            await("player after rotation") { activityPlayer(scenario) != null }
-            await("READY after rotation", 20_000L) { activityPlayer(scenario)?.playbackState == Player.STATE_READY }
-            val afterRotation = activityPlayer(scenario)!!.currentPosition
+            await("player after rotation") { playerSnapshot(scenario).attached }
+            await("READY after rotation", 20_000L) { playerSnapshot(scenario).playbackState == Player.STATE_READY }
+            val afterRotation = playerSnapshot(scenario).currentPosition
             assertTrue("rotation must restore position", afterRotation >= (beforeRotation - 250L).coerceAtLeast(0L))
 
             scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
             scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
-            await("player after background/foreground") { activityPlayer(scenario) != null }
-            await("READY after background/foreground", 20_000L) { activityPlayer(scenario)?.playbackState == Player.STATE_READY }
+            await("player after background/foreground") { playerSnapshot(scenario).attached }
+            await("READY after background/foreground", 20_000L) { playerSnapshot(scenario).playbackState == Player.STATE_READY }
 
             scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
             await("activity destroyed after back") { scenario.state == androidx.lifecycle.Lifecycle.State.DESTROYED }
         }
     }
 
-    private fun activityPlayer(scenario: ActivityScenario<PlayerActivity>): Player? {
-        var result: Player? = null
+    /** Media3 requires every player read to happen on its application looper (main for PlayerActivity). */
+    private fun playerSnapshot(scenario: ActivityScenario<PlayerActivity>): PlayerSnapshot {
+        var snapshot = PlayerSnapshot()
         scenario.onActivity { activity ->
-            result = activity.findViewById<androidx.media3.ui.PlayerView>(PlayerActivity.PLAYER_VIEW_ID).player
+            val player = activity.findViewById<androidx.media3.ui.PlayerView>(PlayerActivity.PLAYER_VIEW_ID).player
+            snapshot = if (player == null) {
+                PlayerSnapshot()
+            } else {
+                PlayerSnapshot(
+                    attached = true,
+                    playbackState = player.playbackState,
+                    currentPosition = player.currentPosition,
+                )
+            }
         }
-        return result
+        return snapshot
     }
 
     private fun await(label: String, timeoutMs: Long = 10_000L, condition: () -> Boolean) {
@@ -79,6 +89,12 @@ class PlayerLifecycleRuntimeTest {
         }
         throw AssertionError("Timed out waiting for $label")
     }
+
+    private data class PlayerSnapshot(
+        val attached: Boolean = false,
+        val playbackState: Int = Player.STATE_IDLE,
+        val currentPosition: Long = 0L,
+    )
 
     private companion object {
         const val SHAKA_DEMO_HLS = "https://storage.googleapis.com/shaka-demo-assets/angel-one-hls/hls.m3u8"
