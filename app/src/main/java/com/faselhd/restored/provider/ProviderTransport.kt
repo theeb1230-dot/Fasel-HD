@@ -1,5 +1,6 @@
 package com.faselhd.restored.provider
 
+import com.faselhd.restored.network.SafeDns
 import com.faselhd.restored.network.SafeHttp
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.Call
@@ -21,12 +22,14 @@ sealed interface TransportResult {
 /**
  * Credential-free provider transport boundary. Endpoints are supplied by an authorized
  * provider implementation; this class never embeds recovered hosts, tokens or cookies.
- * Coroutine cancellation actively cancels the underlying OkHttp call.
+ * Coroutine cancellation actively cancels the underlying OkHttp call. SafeDns validates
+ * resolved addresses at connection time so a public hostname cannot rebind to local space.
  */
 class ProviderTransport(
     connectTimeoutSeconds: Long = 10,
     readTimeoutSeconds: Long = 15,
     private val client: OkHttpClient = OkHttpClient.Builder()
+        .dns(SafeDns())
         .connectTimeout(connectTimeoutSeconds, TimeUnit.SECONDS)
         .readTimeout(readTimeoutSeconds, TimeUnit.SECONDS)
         .callTimeout(20, TimeUnit.SECONDS)
