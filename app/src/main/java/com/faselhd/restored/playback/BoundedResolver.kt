@@ -17,9 +17,16 @@ sealed interface ResolverResult {
  * HLS/DASH/MP4 candidates and returns the first safe playable request.
  */
 object BoundedResolver {
+    private const val MAX_CANDIDATES = 32
+
     fun resolve(candidates: Iterable<String>): ResolverResult {
+        val seen = LinkedHashSet<String>(MAX_CANDIDATES)
+        var inspected = 0
+
         for (candidate in candidates) {
+            if (inspected++ >= MAX_CANDIDATES) break
             val normalized = SafeHttp.normalize(candidate) ?: continue
+            if (!seen.add(normalized)) continue
             if (!normalized.startsWith("https://", ignoreCase = true)) continue
             when (val decision = PlaybackPipeline.prepare(PlaybackClassifier.classify(normalized))) {
                 is PlaybackDecision.Native -> return ResolverResult.Resolved(decision.request)
