@@ -4,37 +4,42 @@ Last updated: 2026-09-22
 
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Run-start main SHA: `0618f69acba38e9c4936b876588848942fa7f5ef`.
-- PR #32 `recovery/player-lifecycle-runtime` exact accepted head: `80921821076a67635f16a900fc1f844753c40f7a`.
-- PR #32 merged successfully; merge SHA: `2ae5987e6e54173d3e28c297ac640c62c3d1af10`.
-- No second PR was opened.
+- Run-start/end main SHA: `3029c1e0ce4a6246d0b6b2c577278c34aa4a6737` (unchanged; PR #33 not merged without exact-head CI).
+- PR #33 `recovery/provider-response-bounds`; code head before this handoff update: `f9d34a454cb3265c68cdd8dab39ac359cbeff214`.
+- PR #33 is the only open PR created from the verified main baseline.
 
 ## Reference APK
 - Reference: `FaselhdV20.0.2.apk`; expected SHA-256 `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
-- No endpoint/token/cookie/credential/bypass material was recovered or introduced in this run.
+- Google Drive filename search returned no accessible match this run, so the reference hash could not be independently reverified.
+- No endpoint/token/cookie/credential/bypass material was recovered or introduced.
+
+## Blockers before implementation
+### P0
+1. Authorized concrete external provider/resolver E2E remains the highest product blocker, but no authorized credential-free endpoint is currently available; do not invent one.
+2. Provider production quality remains independently actionable: successful HTTP bodies were read with `body.string()` without an explicit size bound.
+3. Physical-device and long-playback evidence remain unavailable in the current environment.
+### P1
+Favorites/History/Resume, Downloads, Settings/Profiles and full reference parity remain open; reference APK was not accessible this run, so no unverified feature claim is used to justify implementation.
+### P2
+Dependency/license/accessibility/performance edge cases remain open.
 
 ## Work completed this run
-1. Re-read repository/default branch, branches, the only open PR, exact head, exact-head Actions/jobs/steps and artifacts rather than inheriting handoff state.
-2. Verified PR #32 exact head `80921821076a67635f16a900fc1f844753c40f7a` with Android CI run `35761640841` fully SUCCESS.
-3. Build job passed Unit tests, Lint, Debug APK build, APK verification and artifact upload.
-4. Runtime job passed emulator end-to-end smoke, closing the project-owned Media3 lifecycle acceptance slice for pause/resume, rotation restoration, background/foreground recreation, back/destroy, READY and playback progress.
-5. Verified exact-head artifacts: `fasel-hd-debug-apk` 7,215,687 bytes, digest `sha256:53d39e6044847dc6886f3452611247c34c766df28b931b5b4709aabba156aa06`; `runtime-smoke-reports` 87,394 bytes, digest `sha256:eb3f4dc9336ccae0e56f1ea51c063c765ae0be0c988d21e20678236d07b906c7`.
-6. Merged PR #32 only after exact-head CI was fully green and PR was mergeable. Merge SHA `2ae5987e6e54173d3e28c297ac640c62c3d1af10`.
+1. Re-read repository/default branch, all visible branches, open PR state, latest main Actions/jobs/steps, Releases, tree, TODO/FIXME search, handoff and provider transport code.
+2. Verified `main` Android CI run `35767741268` is fully green: Unit tests, Lint, Debug APK build/verification and emulator end-to-end smoke all succeeded.
+3. Confirmed there were no open PRs before starting this slice and no Releases.
+4. Selected the highest independently actionable P0 provider-quality defect: unbounded successful response bodies.
+5. Created PR #33 and changed `ProviderTransport` to enforce a configurable positive response limit with a 2 MiB production default.
+6. Added fail-closed rejection for declared oversized bodies and a bounded source read that also catches absent/dishonest Content-Length.
+7. Added regression tests for over-limit rejection and exact-limit acceptance; existing cancellation and SafeHttp tests remain intact.
+8. Did not weaken SafeHttp, redirects, DNS policy, credentials/cookies, or external-browser restrictions.
 
-## Acceptance criteria / blockers
-### P0
-- Deterministic/project-controlled provider fixture path through transport/decode/domain/details/sources/SafeHttp/decision/UI/Media3: CLOSED by merged evidence.
-- Authorized concrete external provider/resolver E2E: OPEN; no invented endpoint, recovered credential, static cookie or bypass permitted.
-- Movies/Series/Anime/Streaming independent runtime proof: CLOSED by merged #29 evidence.
-- Player lifecycle deterministic emulator proof: CLOSED by merged #32. Physical-device and long-playback remain OPEN.
-- Provider production quality and resolver external runtime evidence remain OPEN where no authorized concrete endpoint exists.
-- APK exact-head CI evidence for #32: CLOSED for emulator/build artifact; physical-device evidence remains OPEN.
-
-### P1
-Favorites/History/Resume, Downloads, Settings/Profiles and full Arabic/RTL/reference parity remain OPEN pending reference-backed implementation/evidence.
-
-### P2
-Literal IPv4/IPv6 and DNS-rebinding hardening are merged. Dependency/license audit, accessibility, performance and long-playback edge cases remain OPEN.
+## Acceptance criteria
+- Oversized successful provider responses are rejected as `response_too_large`: IMPLEMENTED, awaiting exact-head CI.
+- A body exactly at the configured bound is accepted intact: TEST ADDED, awaiting exact-head CI.
+- Missing/dishonest Content-Length cannot cause an unbounded `string()` allocation: IMPLEMENTED, awaiting exact-head CI.
+- Existing cancellation and security behavior remains green: awaiting exact-head CI.
+- Authorized concrete external provider/resolver E2E: OPEN.
+- Physical-device / long-playback: OPEN.
 
 ## Honest weighted completion
 | Area | Weight | Evidence-level completion |
@@ -61,27 +66,23 @@ Literal IPv4/IPv6 and DNS-rebinding hardening are merged. Dependency/license aud
 - **Current P0 Path Completion: 98.0%**.
 - **Runtime-Verified Completion: 57.0%**.
 - **Beta Readiness: 81.0%**.
-- Increase is granted only because #32 exact-head build and emulator lifecycle runtime evidence are green and merged; external provider/resolver and physical-device/long-playback evidence remain uncredited.
+- No completion credit is granted to PR #33 until exact-head CI is green and the PR is merged.
 
 ## CI / artifacts
-- PR #32 exact head `80921821076a67635f16a900fc1f844753c40f7a`, Android CI `35761640841`: build SUCCESS; runtime-smoke SUCCESS.
-- `fasel-hd-debug-apk`: 7,215,687 bytes; artifact digest `sha256:53d39e6044847dc6886f3452611247c34c766df28b931b5b4709aabba156aa06`.
-- `runtime-smoke-reports`: 87,394 bytes; digest `sha256:eb3f4dc9336ccae0e56f1ea51c063c765ae0be0c988d21e20678236d07b906c7`.
-- Merge SHA: `2ae5987e6e54173d3e28c297ac640c62c3d1af10`.
-
-## Security / licensing
-- Clean-room only. No credentials/API tokens/signing secrets/persistent cookies.
-- No DRM/CAPTCHA/paywall/access-control bypass, ads/tracking or external-browser playback.
-- SafeHttp/PlaybackRequest remain fail-closed; production code was not weakened for lifecycle evidence.
+- Latest verified main: `3029c1e0ce4a6246d0b6b2c577278c34aa4a6737`.
+- Main Android CI `35767741268`: build SUCCESS; runtime-smoke SUCCESS.
+- PR #33 code head `f9d34a454cb3265c68cdd8dab39ac359cbeff214`; exact-head workflow had not appeared at the last check before this handoff commit.
+- No GitHub Release exists yet.
 
 ## ما لا يعمل بعد بصراحة
-- No verified authorized concrete external provider/resolver runtime E2E path yet.
+- No verified authorized concrete external provider/resolver runtime E2E path.
 - No physical-device smoke or long-duration playback proof.
 - Favorites/History/Resume, Downloads, Settings/Profiles and full Arabic/RTL/reference parity remain incomplete.
+- PR #33 response-bound hardening is not credited until its exact-head CI is green and merged.
 
 ## أهداف التشغيل التالي
-1. Re-read post-merge main and ensure no open PR/regression exists.
-2. Keep the authorized concrete provider/resolver E2E blocker explicit unless a credential-free permitted source is available; do not invent endpoints or bypass controls.
-3. Continue physical-device/long-playback evidence when an actual device environment is available.
-4. Inspect reference-backed P1 evidence and implement the highest-value confirmed slice, preferring Favorites/History/Resume if reference evidence supports it.
-5. Continue provider quality, dependency/license, accessibility and performance hardening without weakening SafeHttp.
+1. Inspect exact-head CI for PR #33; on failure use logs/artifacts to fix the root cause on the same branch, and on full green + mergeable merge immediately.
+2. Re-read post-merge main and recalculate completion only from merged evidence.
+3. Keep authorized external provider/resolver E2E explicit unless a permitted credential-free source becomes available.
+4. Continue physical-device/long-playback evidence when an actual device environment exists.
+5. If reference APK becomes accessible, verify its SHA-256 before using it to prioritize P1 parity work.
