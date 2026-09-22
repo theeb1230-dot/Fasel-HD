@@ -40,4 +40,14 @@ class BoundedResolverTest {
     @Test fun emptyCandidatesFailClosed() {
         assertTrue(BoundedResolver.resolve(emptyList()) is ResolverResult.Rejected)
     }
+
+    @Test fun capsInspectionAndDeduplicatesCandidates() {
+        val candidates = buildList {
+            repeat(40) { add("https://example.org/watch/$it") }
+            repeat(40) { add("https://example.org/watch/0") }
+            add("https://cdn.example.org/video.mp4")
+        }
+
+        assertTrue(BoundedResolver.resolve(candidates) is ResolverResult.Rejected)
+    }
 }
