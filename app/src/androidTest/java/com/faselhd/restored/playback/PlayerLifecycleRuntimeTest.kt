@@ -28,7 +28,7 @@ class PlayerLifecycleRuntimeTest {
         val intent = Intent(context, PlayerActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             putExtra(PlayerActivity.EXTRA_URI, fixture.toURI().toString())
-            putExtra(PlayerActivity.EXTRA_KIND, PlaybackKind.MP4.name)
+            putExtra(PlayerActivity.EXTRA_KIND, PlaybackKind.DIRECT.name)
         }
 
         ActivityScenario.launch<PlayerActivity>(intent).use { scenario ->
