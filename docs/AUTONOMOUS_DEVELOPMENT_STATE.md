@@ -5,7 +5,7 @@ Last updated: 2026-09-22
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
 - Exact run-start/end main SHA: `0618f69acba38e9c4936b876588848942fa7f5ef` (merged PR #31).
-- The only open PR is #32 `recovery/player-lifecycle-runtime`; exact code head before this handoff update: `bebf3759547fa5cb6ffe91e0286f1c0bf92fbe1d`.
+- The only open PR is #32 `recovery/player-lifecycle-runtime`; latest code-fix commit before this handoff update: `7fa5d4ac53538ec03936944a6523087d0a5ac839`.
 - PR #32 is mergeable and not draft. No second PR was opened.
 
 ## Reference APK
@@ -13,18 +13,18 @@ Last updated: 2026-09-22
 - No endpoint/token/cookie/credential/bypass material was recovered or introduced in this run.
 
 ## Work completed this run
-1. Re-read main, the only open PR, exact head and exact-head Actions rather than inheriting prior state.
-2. PR #32 head `1646dc64c2815ea89621ad448e95dc9ebcd70acc` ran Android CI `35747785601`: build job fully SUCCESS (Unit tests, Lint, Debug APK, APK verification, artifact upload); runtime-smoke FAILED.
-3. Downloaded and inspected the preserved runtime-smoke report artifact instead of guessing. Root cause is explicit: `PlayerLifecycleRuntimeTest` throws `NullPointerException: Cannot run onActivity since Activity has been destroyed already`.
-4. Confirmed the cause in production flow: the lifecycle test supplied `file://...`, while `PlayerActivity` constructs `PlaybackRequest` and intentionally fails closed for non-production-safe input, so the activity finishes before the test's `onActivity` call.
-5. Fixed the test on the same PR without weakening SafeHttp/PlaybackRequest: it now uses the same public credential-free Shaka HTTPS HLS demo already used by the provider runtime smoke, and `PlaybackKind.HLS`. Removed the local file fixture and all test-only bypass pressure. Commit: `bebf3759547fa5cb6ffe91e0286f1c0bf92fbe1d`.
+1. Re-read repository/default branch, the only open PR, exact head, exact-head Actions/jobs/steps and artifacts rather than inheriting handoff state.
+2. PR #32 exact prior head `93d465405f4897a9a024c3253f02dc37b6aff42d` ran Android CI `35754639694`: build job fully SUCCESS (Unit tests, Lint, Debug APK, APK verification, artifact upload); runtime-smoke FAILED only.
+3. Downloaded and inspected the preserved runtime-smoke artifact. Exact root cause is Media3 thread confinement, not network or SafeHttp: `IllegalStateException: Player is accessed on the wrong thread`, current thread AndroidJUnitRunner, expected main, first failing read at `PlayerLifecycleRuntimeTest.kt:31` (`player.playbackState`).
+4. Fixed every lifecycle-test Media3 read to occur inside `ActivityScenario.onActivity` on the main/application thread, returning immutable snapshots to the instrumentation thread. Production player/security code is unchanged. Commit: `7fa5d4ac53538ec03936944a6523087d0a5ac839`.
+5. No blind rerun, security weakening, external endpoint invention, credential or static cookie was introduced.
 
 ## Acceptance criteria / blockers
 ### P0
 - Deterministic/project-controlled provider fixture path through transport/decode/domain/details/sources/SafeHttp/decision/UI/Media3: CLOSED by merged evidence.
 - Authorized concrete external provider/resolver E2E: OPEN; no invented endpoint, recovered credential, static cookie or bypass permitted.
 - Movies/Series/Anime/Streaming independent runtime proof: CLOSED by merged #29 evidence.
-- Player lifecycle: implementation exists; #32 runtime acceptance remains OPEN until exact-head CI is fully green and merged. Physical-device and long-playback remain OPEN.
+- Player lifecycle: implementation exists; #32 runtime acceptance remains OPEN until corrected exact-head CI is fully green and merged. Physical-device and long-playback remain OPEN.
 - Provider production quality and resolver external runtime evidence remain OPEN where no authorized concrete endpoint exists.
 - APK: #32 prior head produced a verified Debug APK, but #32 is not merge-creditable until runtime-smoke is green.
 
@@ -59,18 +59,18 @@ Literal IPv4/IPv6 and DNS-rebinding hardening are merged. Dependency/license aud
 - **Current P0 Path Completion: 97.0%**.
 - **Runtime-Verified Completion: 51.0%**.
 - **Beta Readiness: 79.5%**.
-- No percentage increase is granted to #32 until exact-head runtime CI succeeds and the PR is merged.
+- No percentage increase is granted to #32 until corrected exact-head runtime CI succeeds and the PR is merged.
 
 ## CI / artifacts
-- PR #32 head `1646dc64c2815ea89621ad448e95dc9ebcd70acc`, Android CI `35747785601`: build SUCCESS; runtime-smoke FAILED only.
-- `fasel-hd-debug-apk`: 7,215,698 bytes; artifact digest `sha256:a600014f17990b6ffa71502e6bf5d7a8d56038c1fbde3f37ffe4d58582f84bdc`.
-- `runtime-smoke-reports`: 76,790 bytes; digest `sha256:a4bdd787d54e4eebb20221aebb30ff75e353403a8d380befac0f5b5b079a2c05`; report identified the destroyed-Activity NPE above.
-- Corrective lifecycle-test commit: `bebf3759547fa5cb6ffe91e0286f1c0bf92fbe1d`; exact-head workflow had not appeared at the last check.
+- PR #32 head `93d465405f4897a9a024c3253f02dc37b6aff42d`, Android CI `35754639694`: build SUCCESS; runtime-smoke FAILED only.
+- `fasel-hd-debug-apk`: 7,215,692 bytes; artifact digest `sha256:330701cb2e54303c35c2b1c7ebd3f0064fc916304703b216742b3709d926789c`.
+- `runtime-smoke-reports`: 73,944 bytes; digest `sha256:da6d944ff3838f48a641ec1d0961a3290bcc5882a21d75dabd41eeb8dfd911e3`; report proves wrong-thread Media3 access described above.
+- Corrective lifecycle-test commit: `7fa5d4ac53538ec03936944a6523087d0a5ac839`; exact-head workflow had not appeared at the last check before this handoff update.
 
 ## Security / licensing
 - Clean-room only. No credentials/API tokens/signing secrets/persistent cookies.
 - No DRM/CAPTCHA/paywall/access-control bypass, ads/tracking or external-browser playback.
-- SafeHttp/PlaybackRequest remain fail-closed; the lifecycle test was changed to respect the production HTTPS boundary rather than bypass it.
+- SafeHttp/PlaybackRequest remain fail-closed; production code was not weakened for the lifecycle test.
 
 ## ما لا يعمل بعد بصراحة
 - No verified authorized concrete external provider/resolver runtime E2E path yet.
