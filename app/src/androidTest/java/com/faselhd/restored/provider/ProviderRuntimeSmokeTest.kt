@@ -19,8 +19,8 @@ import okhttp3.Protocol
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -50,8 +50,8 @@ class ProviderRuntimeSmokeTest {
 
         val context = androidx.test.platform.app.InstrumentationRegistry.getInstrumentation().targetContext
         val intent = PlaybackNavigator.intent(context, decision)
-            ?: fail("Native provider decision must produce an internal PlayerActivity intent")
-        intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+        assertNotNull("Native provider decision must produce an internal PlayerActivity intent", intent)
+        intent!!.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
 
         ActivityScenario.launch<PlayerActivity>(intent).use { scenario ->
             val deadline = SystemClock.uptimeMillis() + 20_000
