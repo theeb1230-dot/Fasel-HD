@@ -74,7 +74,10 @@ class PlayerActivity : AppCompatActivity() {
         val uri = intent.getStringExtra(EXTRA_URI) ?: return finish()
         val kind = intent.getStringExtra(EXTRA_KIND)?.let { runCatching { PlaybackKind.valueOf(it) }.getOrNull() }
             ?: return finish()
-        val request = runCatching { PlaybackRequest(PlaybackSource(uri, kind)) }.getOrElse { return finish() }
+        val request = runCatching { PlaybackRequest(PlaybackSource(uri, kind)) }.getOrElse {
+            showError("تعذر تشغيل الفيديو. رابط التشغيل غير صالح أو غير مسموح.")
+            return
+        }
         hideError()
         player = Media3Playback(this).create(request).also { exoPlayer ->
             playerView.player = exoPlayer
