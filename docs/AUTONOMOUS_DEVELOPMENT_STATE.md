@@ -34,12 +34,14 @@ Dependency/license/accessibility/performance edge cases remain open.
 5. Verified artifacts: `fasel-hd-debug-apk` 7,218,346 bytes, digest `sha256:876f517f9d1fb8bb1d468809ee3f8367b5057fd0e2f8e8792c0ed269b0f41de4`; `runtime-smoke-reports` 92,499 bytes, digest `sha256:e849a130461a49f367f44b357ba60b885b48a1b79925083c2862c108e2358309`.
 6. Merged PR #43 with squash SHA `df8db8e6d435138b811225d23c66806c77b708aa`.
 7. Added Android runtime regression coverage that cancels an active OkHttp call when the coroutine is cancelled; the test uses an injected Call.Factory and asserts the underlying call receives `cancel()`.
+8. Exact-head CI run `35855246383` failed on the current PR merge ref before artifact creation; unit tests and lint passed, but Android-test compilation failed because the adapter used the wrong `Timeout` import and property-style `isExecuted`/`isCanceled` accessors.
+9. Fixed the root cause on the same implementation branch in commit `f69246fd22ff46cbd8a1d7a16d0713876794cc53`: import `okio.Timeout` and call `delegate.isExecuted()` / `delegate.isCanceled()`.
 
 ## Acceptance criteria
 - Unsafe URL is rejected without opening or retrying a request: CLOSED by PR #42 and CI `35843617445`.
 - Oversized response body is rejected without retry: CLOSED by PR #42 and CI `35843617445`.
 - Bounded transient retry remains green after the negative tests: CLOSED by PR #42 and CI `35843617445`.
-- Cancellation still cancels active OkHttp call: IMPLEMENTED on current branch, pending exact-head CI and merge.
+- Cancellation still cancels active OkHttp call: IMPLEMENTED; exact-head CI previously reached the test source but failed compilation on adapter API usage; fixed on the same branch, pending a new exact-head CI and merge.
 - Authorized concrete external provider/resolver E2E: OPEN.
 - Physical-device / long-playback: OPEN.
 
@@ -51,9 +53,10 @@ Dependency/license/accessibility/performance edge cases remain open.
 
 ## CI / artifacts
 - PR #43 Android CI run: `35849508324`.
-- `fasel-hd-debug-apk`: 7,218,346 bytes; digest `sha256:876f517f9d1fb8bb1d468809ee3f8367b5057fd0e2f8e8792c0ed269b0f41de4`.
-- `runtime-smoke-reports`: 92,499 bytes; digest `sha256:e849a130461a49f367f44b357ba60b885b48a1b79925083c2862c108e2358309`.
-- No CI credit is assigned yet to the current implementation branch until its exact-head workflow passes and the PR is merged.
+- Current PR exact-head CI run: `35855246383` (failure; no APK artifact accepted).
+- Failed build root cause: `Unresolved reference 'Timeout'`; `isExecuted` and `isCanceled` require function invocation in the current OkHttp API.
+- Fix commit on the same branch: `f69246fd22ff46cbd8a1d7a16d0713876794cc53`.
+- No CI credit is assigned yet to the current implementation branch until its new exact-head workflow passes and the PR is merged.
 - No GitHub Release exists.
 
 ## What still does not work
@@ -63,9 +66,8 @@ Dependency/license/accessibility/performance edge cases remain open.
 - Reference APK is not accessible in the connected Google Drive context; expected hash remains unverified.
 
 ## Next run goals
-1. Open the single PR for `recovery/provider-cancellation-runtime-proof`.
-2. Inspect exact-head CI jobs, steps, logs, checks and artifacts; do not merge while pending.
-3. If green and mergeable, merge immediately and recompute percentages from merged evidence only.
-4. If CI fails, fix the root cause on the same branch and add regression coverage.
-5. Continue deterministic provider/resolver evidence without inventing unauthorized external access.
-6. Move to maintenance mode only after the remaining P0 runtime gates are actually closed.
+1. Inspect the new exact-head CI for PR #44 after commit `f69246fd22ff46cbd8a1d7a16d0713876794cc53`.
+2. If green and mergeable, merge PR #44 immediately and recompute percentages from merged evidence only.
+3. If CI fails again, fix the root cause on the same branch and add regression coverage; do not rerun blindly.
+4. Continue deterministic provider/resolver evidence without inventing unauthorized external access.
+5. Move to maintenance mode only after the remaining P0 runtime gates are actually closed.
