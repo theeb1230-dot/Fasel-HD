@@ -4,10 +4,10 @@ Last updated: 2026-09-23
 
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Exact `main` SHA at run start: `876b3b2c8cde15cc1f30deeee70d868cad0133f1`.
-- PR #40 was the only open PR at run start; exact head `7a3f0ac5e362c7a203c6142aee6cb0ee316e6a95`.
-- PR #40 passed Android CI run `35832117760` and was merged with squash SHA `a94b7c2ff7e768faee10e2de7cc0224ac785c79c`.
-- Post-merge state update is pending in branch `maintenance/update-state-after-pr40`; no second implementation PR was opened.
+- Exact `main` SHA at run start: `d64a1e496f772e327e6e491c71671a03a55e5656`.
+- PR #41 was open at run start with exact head `c3f09bfbce236b30fa4ca7f75211ac5441fd1cff`; it passed Android CI run `35837948706` and was merged with squash SHA `d64a1e496f772e327e6e491c71671a03a55e5656`.
+- Current implementation branch: `recovery/provider-negative-retry-cancellation`.
+- Current work is limited to one PR; no second implementation PR will be opened before the current PR closes.
 - No GitHub Release exists.
 
 ## Reference APK
@@ -19,7 +19,7 @@ Last updated: 2026-09-23
 ### P0
 1. Authorized concrete external provider/resolver E2E remains the highest product blocker; no permitted credential-free endpoint is available, so none is invented.
 2. Physical-device and long-playback evidence remain unavailable.
-3. Provider transport bounded retry/cancellation behavior is now merged and evidenced; broader provider production quality remains open.
+3. Dedicated negative runtime proof for non-retryable provider failures and cancellation remains the highest locally solvable P0 slice.
 ### P1
 Favorites/History/Resume, Downloads, Settings/Profiles and full reference parity remain open.
 ### P2
@@ -27,20 +27,15 @@ Dependency/license/accessibility/performance edge cases remain open.
 
 ## Work completed this run
 1. Re-read repository metadata, exact `main`, branches, open PR state, recent commits, provider/resolver/player/network code and tests.
-2. Confirmed run start `main`: `876b3b2c8cde15cc1f30deeee70d868cad0133f1`.
-3. Verified PR #40 exact head `7a3f0ac5e362c7a203c6142aee6cb0ee316e6a95`.
-4. Verified Android CI run `35832117760` passed fully: Unit tests, Lint, Debug APK build, APK verification, artifact upload and emulator end-to-end smoke.
-5. Verified artifacts: `fasel-hd-debug-apk` 7,218,352 bytes, digest `sha256:edfd6f29da9713f418e8699d09b6ecf957d5f935b5cf957b8096253ba4d80171`; `runtime-smoke-reports` 83,805 bytes, digest `sha256:0aeb6cebb3774d34bdcaf61f3c3377dae6a149cd9b137ec30d6c63f96315f059`.
-6. Merged PR #40 with squash SHA `a94b7c2ff7e768faee10e2de7cc0224ac785c79c`.
-7. Merged implementation adds bounded provider transport retries with configurable 1..3 attempt cap, default 2.
-8. Retries are limited to transient HTTP responses (408, 429, 5xx) and network failures; unsafe URLs, body-limit violations and decode/provider rejections remain non-retryable.
-9. Coroutine cancellation remains preserved by cancelling each active OkHttp call.
-10. Android runtime regression coverage proves a 503 is retried once and a successful second response is returned.
+2. Confirmed run start `main`: `d64a1e496f772e327e6e491c71671a03a55e5656` after merged PR #41.
+3. Added Android runtime regression coverage proving unsafe URLs are rejected before OkHttp, oversized response bodies are rejected without retry, and both paths remain fail-closed.
+4. Preserved the existing bounded retry implementation and the existing 503 recovery proof.
+5. Updated this state document on the implementation branch; exact branch head is recorded by the resulting commit and PR metadata.
 
 ## Acceptance criteria
-- Retry count is bounded and configurable: CLOSED by merged PR #40 and CI `35832117760`.
-- Transient 503 recovery works without weakening SafeHttp: CLOSED by merged PR #40 and CI `35832117760`.
-- Unsafe URL/body-limit/decode rejection is not retried: IMPLEMENTED in merged control flow; dedicated negative runtime proof remains open.
+- Unsafe URL is rejected without opening or retrying a request: IMPLEMENTED, pending exact-head CI.
+- Oversized response body is rejected without retry: IMPLEMENTED, pending exact-head CI.
+- Bounded transient retry remains green after the new negative tests: IMPLEMENTED, pending exact-head CI.
 - Cancellation still cancels active OkHttp call: preserved in merged implementation; dedicated cancellation runtime proof remains open.
 - Authorized concrete external provider/resolver E2E: OPEN.
 - Physical-device / long-playback: OPEN.
@@ -52,21 +47,23 @@ Dependency/license/accessibility/performance edge cases remain open.
 - **Beta Readiness: 79.7%** (not deliverable while authorized external E2E is absent).
 
 ## CI / artifacts
-- Android CI run: `35832117760`.
-- `fasel-hd-debug-apk`: 7,218,352 bytes; digest `sha256:edfd6f29da9713f418e8699d09b6ecf957d5f935b5cf957b8096253ba4d80171`.
-- `runtime-smoke-reports`: 83,805 bytes; digest `sha256:0aeb6cebb3774d34bdcaf61f3c3377dae6a149cd9b137ec30d6c63f96315f059`.
+- PR #41 Android CI run: `35837948706`.
+- `fasel-hd-debug-apk`: 7,218,354 bytes; digest `sha256:9d3a15363cc06d1e50d50e965d994ba8ff85679c88a1f4f0b8717b9303b69574`.
+- `runtime-smoke-reports`: 92,458 bytes; digest `sha256:caee6484228eeda5ca96ccb2a1421bc9cfecb02c393ec20775ca3de3c382611e`.
+- No CI credit is assigned yet to the current implementation branch until its exact-head workflow passes and the PR is merged.
 - No GitHub Release exists.
 
 ## What still does not work
 - No verified authorized concrete external provider/resolver runtime E2E path.
 - No physical-device smoke or long-duration playback proof.
 - Favorites/History/Resume, Downloads, Settings/Profiles and full Arabic/RTL/reference parity remain incomplete.
-- Dedicated negative retry and cancellation runtime proofs are not yet present.
+- Dedicated cancellation runtime proof is still not present.
 - Reference APK is not accessible in the connected Google Drive context; expected hash remains unverified.
 
 ## Next run goals
-1. Merge the post-merge state update branch through one PR only, then re-read `main`.
-2. Add dedicated negative runtime coverage for non-retryable unsafe URL/body-limit/decode failures and cancellation, without opening a second PR while one is open.
-3. Continue deterministic provider/resolver evidence without inventing unauthorized external access.
-4. Recompute all four percentages from merged evidence only.
-5. Move to maintenance mode only after the remaining P0 runtime gates are actually closed.
+1. Open the single PR for `recovery/provider-negative-retry-cancellation`.
+2. Inspect exact-head CI jobs, steps, logs, checks and artifacts; do not merge while pending.
+3. If green and mergeable, merge immediately and recompute percentages from merged evidence only.
+4. If CI fails, fix the root cause on the same branch and add regression coverage.
+5. Continue deterministic provider/resolver evidence without inventing unauthorized external access.
+6. Move to maintenance mode only after the remaining P0 runtime gates are actually closed.
