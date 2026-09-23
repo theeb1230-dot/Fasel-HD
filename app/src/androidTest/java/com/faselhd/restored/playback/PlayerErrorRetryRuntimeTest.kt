@@ -67,6 +67,6 @@ class PlayerErrorRetryRuntimeTest {
     }
 
     private companion object {
-        const val INVALID_HLS = "https://storage.googleapis.com/shaka-demo-assets/angel-one-hls/does-not-exist.m3u8"
+        const val INVALID_HLS = "https://127.0.0.1:9/fasel-hd-invalid.m3u8"
     }
 }
