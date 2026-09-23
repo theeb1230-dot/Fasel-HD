@@ -16,6 +16,7 @@ class ProviderGatewayTest {
         override suspend fun details(id: String, type: MediaType) = MediaDetails(media)
         override suspend fun sources(mediaId: String, episodeId: String?) = listOf(
             PlaybackSource("https://cdn.example.org/master.m3u8", PlaybackKind.HLS),
+            PlaybackSource("https://cdn.example.org/master.m3u8", PlaybackKind.HLS),
             PlaybackSource("http://127.0.0.1/private.m3u8", PlaybackKind.HLS),
             PlaybackSource("javascript:alert(1)", PlaybackKind.UNSUPPORTED)
         )
@@ -29,9 +30,10 @@ class ProviderGatewayTest {
         assertEquals(1, ProviderGateway(provider).catalog(MediaType.SERIES, 0).page)
     }
 
-    @Test fun unsafeSourcesAreRemovedAtGatewayBoundary() = runBlocking {
-        val sources = ProviderGateway(provider).sources("m1")
+    @Test fun unsafeAndDuplicateSourcesAreRemovedAtGatewayBoundary() = runBlocking {
+        val sources = ProviderGateway(provider).sources("m1", "   ")
         assertEquals(1, sources.size)
+        assertEquals("https://cdn.example.org/master.m3u8", sources.single().uri)
         assertEquals(PlaybackKind.HLS, sources.single().kind)
     }
 

@@ -21,8 +21,11 @@ class ProviderGateway(private val provider: ContentProvider) {
         provider.details(id.trim().requireNotEmpty(), type)
 
     suspend fun sources(mediaId: String, episodeId: String? = null): List<PlaybackSource> =
-        provider.sources(mediaId.trim().requireNotEmpty(), episodeId?.trim())
+        provider.sources(mediaId.trim().requireNotEmpty(), episodeId?.trim()?.takeIf { it.isNotEmpty() })
+            .asSequence()
             .filter { SafeHttp.isAllowed(it.uri) }
+            .distinctBy { it.uri.trim() }
+            .toList()
 
     private fun String.requireNotEmpty(): String {
         require(isNotEmpty()) { "id must not be empty" }
