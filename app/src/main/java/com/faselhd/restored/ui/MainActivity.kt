@@ -141,7 +141,11 @@ class MainActivity : AppCompatActivity() {
     /** Deterministic clean-room provider; live transport remains a separate P0 acceptance criterion. */
     private class DemoProvider : ContentProvider {
         private val sample = MediaSummary("demo-series", "Recovered Series", MediaType.SERIES)
-        override suspend fun catalog(type: MediaType, page: Int) = Page(listOf(sample.copy(type = type)), page, false)
+        override suspend fun catalog(type: MediaType, page: Int): Page<MediaSummary> {
+            val first = sample.copy(type = type)
+            val second = sample.copy(id = "demo-series-2", title = "Recovered Series 2", type = type)
+            return if (page <= 1) Page(listOf(first), 1, true) else Page(listOf(second), 2, false)
+        }
         override suspend fun search(query: String, page: Int) = Page(if (query.isBlank()) emptyList() else listOf(sample.copy(title = "Result: ${query.trim()}")), page, false)
         override suspend fun details(id: String, type: MediaType) = MediaDetails(sample.copy(id = id, type = type), overview = "Deterministic clean-room recovery fixture", seasons = listOf(1), episodes = listOf(Episode("demo-episode", 1, 1, "Episode 1")))
         override suspend fun sources(mediaId: String, episodeId: String?): List<PlaybackSource> = listOf(PlaybackClassifier.classify("https://storage.googleapis.com/shaka-demo-assets/angel-one-hls/hls.m3u8"))
