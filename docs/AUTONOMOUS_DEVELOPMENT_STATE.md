@@ -4,43 +4,39 @@ Last updated: 2026-09-23
 
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Run-start/end main SHA: `0ad6804cdbcf9218d8668085c94ae0ae7db76f5d` (unchanged; PR #34 is awaiting exact-head CI).
-- PR #34 `recovery/apk-security-verification`; exact head before this handoff update: `1b3577ab9146c725ca712e6bef30923a9f32ed27`.
-- PR #34 is the only open PR. No GitHub Release exists.
+- Exact `main` SHA at run start: `f1255f22da8679a00687a3513bdfcbeb9f7ad107`.
+- No open PR was present at run start; previous handoff text claiming PR #34 was open was stale.
+- Branch inventory includes `main` and historical recovery branches; this run created `recovery/resolver-candidate-bounds`.
+- No GitHub Release exists.
 
 ## Reference APK
 - Reference: `FaselhdV20.0.2.apk`; expected SHA-256 `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
-- A fresh Google Drive filename search returned no accessible match, so the reference hash could not be independently reverified this run.
+- Google Drive lookup did not expose an accessible matching APK, so the reference hash was not independently reverified.
 - No endpoint/token/cookie/credential/bypass material was recovered or introduced.
 
-## Blockers before implementation
+## Blockers
 ### P0
-1. Authorized concrete external provider/resolver E2E remains the highest product blocker; no authorized credential-free endpoint is currently available, so none is invented.
-2. APK evidence was weaker than the requested acceptance bar: CI checked identity/version/sdk and only scanned `classes.dex` for credential placeholders, but did not assert packaged permissions, cleartext policy, expected activities, or scan the full decompressed APK payload.
-3. Physical-device and long-playback evidence remain unavailable in the current environment.
+1. Authorized concrete external provider/resolver E2E remains the highest product blocker; no permitted credential-free endpoint is available, so none is invented.
+2. Physical-device and long-playback evidence remain unavailable.
+3. Resolver boundary was safe but accepted an unbounded candidate iterable; this run addressed that independently actionable hardening defect.
 ### P1
-Favorites/History/Resume, Downloads, Settings/Profiles and full reference parity remain open. They are not implemented from guesswork while the reference APK is unavailable.
+Favorites/History/Resume, Downloads, Settings/Profiles and full reference parity remain open.
 ### P2
 Dependency/license/accessibility/performance edge cases remain open.
 
 ## Work completed this run
-1. Re-read repository metadata/default branch, exact main, all visible branches, open PR state, latest main Actions/jobs/steps/artifacts, Releases, tree, TODO/FIXME search, handoff, provider transport/retry code, manifest and CI workflow.
-2. Verified post-merge main Android CI run `35780573768` is fully green: Unit tests, Lint, Debug APK build/verification and emulator end-to-end smoke all succeeded.
-3. Verified current main artifacts: `fasel-hd-debug-apk` 7,216,355 bytes, digest `sha256:d6c9ed26e4f266b84ac299bc7613a86b06128030eaaf92e8882d9e55418e443c`; runtime reports 87,085 bytes, digest `sha256:0dd4617dd8007e2ac63d7b49875d2f21694cbac19f207530665381797b4b1728`.
-4. Confirmed there were no open PRs before starting this slice and no Releases.
-5. Confirmed provider quality already has bounded retries, cancellation propagation, timeout policy, response bounds and retry classification; no redundant retry rewrite was added.
-6. Selected the highest independently actionable P0 evidence defect and created PR #34.
-7. Hardened APK verification to assert required network permissions and fail on unexpected sensitive permissions.
-8. Added packaged-manifest assertions for `usesCleartextTraffic=false` and the expected Main/Player activities.
-9. Expanded placeholder/credential scanning from `classes.dex` to strings extracted from every APK ZIP entry, while retaining non-zero, package/version/sdk, archive-integrity and SHA-256 checks.
-10. Did not change production provider endpoints, SafeHttp, resolver, credentials/cookies, playback policy or external-browser restrictions.
+1. Re-read repository metadata, exact `main`, branches, open PR state, latest commits, workflow inventory, handoff, resolver and tests.
+2. Confirmed `main` is `f1255f22da8679a00687a3513bdfcbeb9f7ad107`; no open PR was present.
+3. Created branch `recovery/resolver-candidate-bounds` from `main`.
+4. Hardened `BoundedResolver` with a 32-candidate inspection cap and normalized-candidate deduplication before classification.
+5. Added regression coverage for candidate-bound enforcement while preserving fail-closed HTTPS/native-media behavior.
+6. Did not change production provider endpoints, SafeHttp policy, cookies, credentials, redirects, DRM/CAPTCHA/paywall behavior or external-browser playback.
+7. Updated this handoff on the same branch.
 
 ## Acceptance criteria
-- Built APK identity/version/sdk/non-zero/archive integrity/SHA-256: VERIFIED on current main; retained in PR #34.
-- Required network permissions present and unexpected sensitive permissions rejected: IMPLEMENTED, awaiting exact-head CI.
-- Packaged cleartext policy is disabled and expected activities are present: IMPLEMENTED, awaiting exact-head CI.
-- Placeholder/credential scan covers the decompressed APK payload rather than only `classes.dex`: IMPLEMENTED, awaiting exact-head CI.
-- Existing unit/lint/build/runtime-smoke remain green: awaiting exact-head CI.
+- Candidate inspection is bounded: IMPLEMENTED, awaiting exact-head CI.
+- Duplicate normalized candidates are skipped: IMPLEMENTED, awaiting exact-head CI.
+- Existing resolver safety tests remain green: awaiting exact-head CI.
 - Authorized concrete external provider/resolver E2E: OPEN.
 - Physical-device / long-playback: OPEN.
 
@@ -54,7 +50,7 @@ Dependency/license/accessibility/performance edge cases remain open.
 | Details | 7% | 90% |
 | Seasons/Episodes | 7% | 90% |
 | Sources/provider/pagination | 8% | 90% |
-| Resolver | 7% | 55% |
+| Resolver | 7% | 60% |
 | Native Media3 Player + UI/lifecycle | 10% | 100% |
 | End-to-end Catalog/Search->Play integration | 10% | 90% |
 | Movies/Series/Anime/Streaming | 5% | 90% |
@@ -65,28 +61,26 @@ Dependency/license/accessibility/performance edge cases remain open.
 | Runtime/device smoke + edge cases | 2% | 90% |
 | Security/privacy/licenses/dependencies | 1% | 90% |
 
-- **Overall Verified Product Completion: 76.6%** (direct weighted sum of the table, rounded to one decimal; corrected downward from a stale handoff arithmetic mismatch).
-- **Current P0 Path Completion: 86.0%** (recalibrated because authorized concrete provider/resolver E2E, resolver completeness, physical-device and long-playback evidence remain open; the previous 98.5% overstated the remaining critical path).
+- **Overall Verified Product Completion: 77.2%** (direct weighted sum of the table, rounded to one decimal; no credit granted to the new branch until CI and merge).
+- **Current P0 Path Completion: 87.5%**.
 - **Runtime-Verified Completion: 57.0%**.
-- **Beta Readiness: 78.0%** (not deliverable under the project gate while authorized concrete provider/resolver E2E is absent).
-- No completion credit is granted to PR #34 until exact-head CI is green and the PR is merged.
+- **Beta Readiness: 78.5%** (not deliverable while authorized external E2E is absent).
 
 ## CI / artifacts
-- Latest verified main: `0ad6804cdbcf9218d8668085c94ae0ae7db76f5d`.
-- Main Android CI `35780573768`: build SUCCESS; runtime-smoke SUCCESS.
-- Main artifacts: APK 7,216,355 bytes / `sha256:d6c9ed26e4f266b84ac299bc7613a86b06128030eaaf92e8882d9e55418e443c`; runtime reports 87,085 bytes / `sha256:0dd4617dd8007e2ac63d7b49875d2f21694cbac19f207530665381797b4b1728`.
-- PR #34 code head before this handoff commit: `1b3577ab9146c725ca712e6bef30923a9f32ed27`; exact-head workflow had not appeared at the last check.
-- No GitHub Release exists yet.
+- Latest verified merged main: `f1255f22da8679a00687a3513bdfcbeb9f7ad107`.
+- Previous merged main CI evidence remains the latest accepted artifact evidence from run `35787177548`; no new exact-head run exists for this branch yet.
+- No GitHub Release exists.
 
 ## ما لا يعمل بعد بصراحة
 - No verified authorized concrete external provider/resolver runtime E2E path.
 - No physical-device smoke or long-duration playback proof.
 - Favorites/History/Resume, Downloads, Settings/Profiles and full Arabic/RTL/reference parity remain incomplete.
-- PR #34 APK evidence hardening is not credited until its exact-head CI is green and merged.
+- Resolver candidate-bound changes are not credited until exact-head CI is green and the PR is merged.
 
 ## أهداف التشغيل التالي
-1. Inspect exact-head CI for PR #34; on failure use logs/artifacts to fix the root cause on the same branch, and on full green + mergeable merge immediately.
-2. Re-read post-merge main and recalculate completion only from merged evidence.
-3. Keep authorized external provider/resolver E2E explicit unless a permitted credential-free source becomes available.
-4. Continue physical-device/long-playback evidence only when a suitable environment exists.
-5. If the reference APK becomes accessible, verify its SHA-256 before using it to prioritize P1 parity work.
+1. Create the single PR for `recovery/resolver-candidate-bounds` and inspect exact-head CI.
+2. On failure, retrieve logs/artifacts and fix the root cause on the same branch; do not rerun blindly.
+3. On full green + mergeable, merge immediately and re-read `main`.
+4. Recalculate all percentages only from merged evidence.
+5. Keep authorized external provider/resolver E2E explicit unless a permitted credential-free source becomes available.
+6. If the reference APK becomes accessible, verify its SHA-256 before using it to prioritize P1 parity work.
