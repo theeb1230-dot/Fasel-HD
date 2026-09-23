@@ -71,4 +71,30 @@ class ProviderRuntimeSmokeTest {
             assertTrue("provider-selected Media3 source must advance currentPosition >=250ms", advanced)
         }
     }
+
+    @Test
+    fun allMediaTypesReachTypedDetailsSourcesAndNativeDecision() = runBlocking {
+        val json = """{"current_page":1,"next_page_url":null,"data":[{"id":"runtime-item","title":"Runtime Item"}]}"""
+        val provider = ConfiguredContentProvider(
+            pageLoader = ProviderPageLoader(ProviderTransport(client = OkHttpClient.Builder().addInterceptor { chain ->
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200)
+                    .message("owned fixture").body(json.toResponseBody()).build()
+            }.build())),
+            catalogUrl = { type, page -> "https://example.org/catalog/${type.name.lowercase()}?page=$page" },
+            searchUrl = { query, type, page -> "https://example.org/search/${type.name.lowercase()}?q=$query&page=$page" },
+            detailsLoader = { id, type -> MediaDetails(MediaSummary(id, "Runtime Item", type)) },
+            sourcesLoader = { _, _ ->
+                listOf(PlaybackClassifier.classify("https://storage.googleapis.com/shaka-demo-assets/angel-one-hls/hls.m3u8"))
+            }
+        )
+
+        MediaType.entries.forEach { type ->
+            val catalogItem = provider.catalog(type, 1).items.single()
+            assertEquals("catalog must preserve media type ${type.name}", type, catalogItem.type)
+            val details = provider.details(catalogItem.id, type)
+            assertEquals("details must preserve media type ${type.name}", type, details.media.type)
+            val source = ProviderGateway(provider).sources(catalogItem.id, null).single()
+            assertTrue("${type.name} source must resolve to native playback", PlaybackPipeline.prepare(source) is PlaybackDecision.Native)
+        }
+    }
 }
