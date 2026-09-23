@@ -7,7 +7,8 @@ Last updated: 2026-09-24
 - Exact `main` SHA at this run start and current read: `947110b93a3920d684857efaf588db80fdc341c8`.
 - Open PR at this run: PR #47 only.
 - Active branch: `recovery/player-error-retry-runtime-proof`.
-- Exact PR #47 head before this state refresh: `37490130cec16ad588d6d8dacd32a2dd944a8e19`.
+- Exact PR #47 head before this run: `bd424f9404d600daeda454789cab940111b0daf8`.
+- Exact PR #47 head after this run: `2852843b0a8736e67772b1dd4aeeb0f3b188bf67`.
 - PR #47 remains open, not merged, and no exact-head workflow run or status check is visible yet.
 - No GitHub Release exists.
 
@@ -28,10 +29,11 @@ Favorites/History/Resume, Downloads, Settings/Profiles and full reference parity
 Dependency/license/accessibility/performance edge cases remain open.
 
 ## Work completed this run
-1. Re-read repository metadata, exact `main`, open PR state, PR #47 exact head, workflow trigger configuration, player code and state document.
+1. Re-read repository metadata, exact `main`, all visible branches, open PR state, PR #47 exact head, workflow trigger configuration, player code and state document.
 2. Confirmed exact `main` SHA `947110b93a3920d684857efaf588db80fdc341c8` and PR #47 as the only open PR.
-3. Confirmed Android CI is configured for `pull_request`, but GitHub currently exposes no workflow run, combined status, job, log, or artifact for exact head `37490130cec16ad588d6d8dacd32a2dd944a8e19`.
-4. Reconciled this state document with the live PR truth; no completion credit is granted.
+3. Confirmed Android CI is configured for `pull_request`, but GitHub currently exposes no workflow run, combined status, job, log, or artifact for exact head `bd424f9404d600daeda454789cab940111b0daf8`.
+4. Removed the test's dependence on an external public media endpoint; the deterministic error/retry proof now uses `https://127.0.0.1:9/fasel-hd-invalid.m3u8` and keeps all evidence project-owned and credential-free.
+5. Reconciled this state document with the live PR truth; no completion credit is granted.
 
 ## Acceptance criteria
 - Unsafe URL rejection without request/retry: CLOSED by PR #42 and CI `35843617445`.
@@ -68,7 +70,7 @@ Dependency/license/accessibility/performance edge cases remain open.
 - PR #47 runtime error/retry proof is pending exact-head CI.
 
 ## Next run goals
-1. Re-read PR #47 exact head and inspect workflow runs, jobs, steps, logs, checks and artifacts.
+1. Re-read PR #47 exact head `2852843b0a8736e67772b1dd4aeeb0f3b188bf67` and inspect workflow runs, jobs, steps, logs, checks and artifacts.
 2. If all required checks are green and PR #47 becomes mergeable, merge it immediately and re-read `main`.
 3. If CI fails, retrieve logs, identify the root cause and fix it on the same branch with regression coverage.
 4. Recompute percentages only from merged evidence.
