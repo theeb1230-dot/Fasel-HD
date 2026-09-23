@@ -4,11 +4,11 @@ Last updated: 2026-09-23
 
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Exact `main` SHA at run start: `a17a7d4c00514d52e07d0ef31e6cae10d5d0cdfa`.
-- Exact `main` SHA after merge: `adecdf540ae20976dcbe2f12967a7930453d505a`.
-- PR #37 was the only open PR at run start; it is now merged. No PR is open after merge.
-- Working branch: `recovery/provider-source-dedup`.
-- Exact PR head verified: `38badc1fe12c3dfdc84d568014dc5b2bee48d076`.
+- Exact `main` SHA at run start: `1f71aba7f30fd43432de832c79072adc342511ae`.
+- Exact `main` SHA at this handoff: unchanged; no merge performed in this run.
+- No PR was open at run start.
+- Working branch: `recovery/provider-normalized-source-identity`.
+- PR #39 is the only open PR; exact head `59ad2dd5f76110192a7abbfdf4a436031760fabf`.
 - No GitHub Release exists.
 
 ## Reference APK
@@ -27,20 +27,18 @@ Favorites/History/Resume, Downloads, Settings/Profiles and full reference parity
 Dependency/license/accessibility/performance edge cases remain open.
 
 ## Work completed this run
-1. Re-read repository metadata, exact `main`, branches, open PR state, commits, Actions jobs/steps, artifacts, handoff, provider/resolver/player/network code and tests.
-2. Confirmed run start `main`: `a17a7d4c00514d52e07d0ef31e6cae10d5d0cdfa`.
-3. Verified PR #37 exact head: `38badc1fe12c3dfdc84d568014dc5b2bee48d076`.
-4. Verified Android CI run `35814738360` passed fully: Unit tests, Lint, Debug APK build, APK verification, artifact upload and emulator end-to-end smoke.
-5. Merged PR #37. Merge/squash commit: `adecdf540ae20976dcbe2f12967a7930453d505a`.
-6. Hardened `ProviderGateway.sources()` to normalize blank episode IDs, fail closed through `SafeHttp`, and deduplicate repeated playback URIs after normalization.
-7. Added JVM regression coverage for unsafe-source removal, duplicate-source removal, and blank episode normalization.
-8. Prepared this state update from the verified merged evidence.
+1. Re-read repository metadata, exact `main`, branches, open PR state, recent commits, provider/resolver/player/network code and tests.
+2. Confirmed run start `main`: `1f71aba7f30fd43432de832c79072adc342511ae`.
+3. Created `recovery/provider-normalized-source-identity` from that exact commit.
+4. Updated `ProviderGateway.sources()` to canonicalize every candidate through `SafeHttp.normalize()` before emission and deduplicate by canonical URI.
+5. Added JVM regression coverage for whitespace-variant duplicate sources and preserved unsafe-source rejection.
+6. Opened PR #39 with exact head `59ad2dd5f76110192a7abbfdf4a436031760fabf`.
+7. No exact-head workflow run was visible at handoff; no merge or completion credit was granted.
 
 ## Acceptance criteria
-- Unsafe playback sources rejected at gateway boundary: CLOSED.
-- Duplicate playback URIs removed deterministically: CLOSED after exact-head CI and merge.
-- Blank episode IDs normalized to null: CLOSED after exact-head CI and merge.
-- Existing provider gateway tests remain green: CLOSED by CI `35814738360`.
+- Unsafe playback sources rejected at gateway boundary: pending exact-head CI.
+- Equivalent normalized playback URIs collapse deterministically: pending exact-head CI.
+- Existing provider gateway tests remain green: pending exact-head CI.
 - Authorized concrete external provider/resolver E2E: OPEN.
 - Physical-device / long-playback: OPEN.
 
@@ -65,15 +63,15 @@ Dependency/license/accessibility/performance edge cases remain open.
 | Runtime/device smoke + edge cases | 2% | 90% |
 | Security/privacy/licenses/dependencies | 1% | 95% |
 
-- **Overall Verified Product Completion: 77.0%**.
-- **Current P0 Path Completion: 88.5%**.
+- **Overall Verified Product Completion: 77.0%** (unchanged; PR #39 unmerged).
+- **Current P0 Path Completion: 88.5%** (unchanged; PR #39 unmerged).
 - **Runtime-Verified Completion: 57.0%**.
 - **Beta Readiness: 79.0%** (not deliverable while authorized external E2E is absent).
 
 ## CI / artifacts
-- Android CI run: `35814738360`.
-- `fasel-hd-debug-apk`: 7,217,151 bytes; digest `sha256:840b96d7b32a5b4b0a925d50dc4cbbc43e43a030677d336975369235931d0200`.
-- `runtime-smoke-reports`: 81,809 bytes; digest `sha256:3951d03057ea9cf6dc963f90c52ba77992249599b15a0c4c3466278b6f2a7395`.
+- No exact-head CI run visible yet for `59ad2dd5f76110192a7abbfdf4a436031760fabf`.
+- Last merged evidence remains Android CI `35814738360` on PR #37.
+- Last merged artifacts remain `fasel-hd-debug-apk` 7,217,151 bytes, digest `sha256:840b96d7b32a5b4b0a925d50dc4cbbc43e43a030677d336975369235931d0200`, and `runtime-smoke-reports` 81,809 bytes, digest `sha256:3951d03057ea9cf6dc963f90c52ba77992249599b15a0c4c3466278b6f2a7395`.
 - No GitHub Release exists.
 
 ## What still does not work
@@ -81,10 +79,11 @@ Dependency/license/accessibility/performance edge cases remain open.
 - No physical-device smoke or long-duration playback proof.
 - Favorites/History/Resume, Downloads, Settings/Profiles and full Arabic/RTL/reference parity remain incomplete.
 - Reference APK is not accessible in the connected Google Drive context; expected SHA remains unverified.
+- PR #39 is pending exact-head CI.
 
 ## Next run goals
-1. Re-read `main` and confirm post-merge CI/status for `adecdf540ae20976dcbe2f12967a7930453d505a`.
-2. Preserve the zero-open-PR state unless a higher-impact, independently verifiable blocker is selected.
-3. Continue deterministic provider/resolver evidence without inventing unauthorized external access.
-4. Recompute all four percentages from merged evidence only.
-5. If no safe, high-impact implementation slice remains, move into maintenance mode with regression protection and explicit blockers.
+1. Inspect exact-head CI, jobs, steps, logs, checks and artifacts for PR #39.
+2. If green and mergeable, merge PR #39 immediately, re-read `main`, and recompute from merged evidence.
+3. If failed, diagnose root cause and add regression coverage on the same branch; do not blind-rerun.
+4. Continue deterministic provider/resolver evidence without inventing unauthorized external access.
+5. If no safe, high-impact implementation slice remains after merge, move into maintenance mode with regression protection and explicit blockers.

@@ -23,8 +23,11 @@ class ProviderGateway(private val provider: ContentProvider) {
     suspend fun sources(mediaId: String, episodeId: String? = null): List<PlaybackSource> =
         provider.sources(mediaId.trim().requireNotEmpty(), episodeId?.trim()?.takeIf { it.isNotEmpty() })
             .asSequence()
-            .filter { SafeHttp.isAllowed(it.uri) }
-            .distinctBy { it.uri.trim() }
+            .mapNotNull { source ->
+                val normalizedUri = SafeHttp.normalize(source.uri) ?: return@mapNotNull null
+                source.copy(uri = normalizedUri)
+            }
+            .distinctBy { it.uri }
             .toList()
 
     private fun String.requireNotEmpty(): String {
