@@ -2,7 +2,6 @@ package com.faselhd.restored.provider
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okhttp3.Call
@@ -12,7 +11,7 @@ import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
-import okhttp3.Timeout
+import okio.Timeout
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -72,8 +71,8 @@ class ProviderTransportCancellationRuntimeTest {
             cancelled.set(true)
             delegate.cancel()
         }
-        override fun isExecuted(): Boolean = delegate.isExecuted
-        override fun isCanceled(): Boolean = delegate.isCanceled
+        override fun isExecuted(): Boolean = delegate.isExecuted()
+        override fun isCanceled(): Boolean = delegate.isCanceled()
         override fun timeout(): Timeout = delegate.timeout()
         override fun clone(): Call = TrackingCall(delegate.clone())
     }
