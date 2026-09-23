@@ -4,10 +4,10 @@ Last updated: 2026-09-23
 
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Exact `main` SHA at run start: `1f71aba7f30fd43432de832c79072adc342511ae`.
-- PR #39 exact head verified: `346e7ac324c6fb29befeafab59634b531b71fb6a`.
-- PR #39 passed Android CI run `35822607657` and was merged with squash SHA `f94286692ca38454a9cb58c93be7caabb0af1998`.
-- No PR is open after merge verification.
+- Exact `main` SHA at run start: `876b3b2c8cde15cc1f30deeee70d868cad0133f1`.
+- No PR was open at run start.
+- Current work branch: `recovery/provider-bounded-retry`.
+- Pending PR: to be opened only after branch contents are complete.
 - No GitHub Release exists.
 
 ## Reference APK
@@ -19,7 +19,7 @@ Last updated: 2026-09-23
 ### P0
 1. Authorized concrete external provider/resolver E2E remains the highest product blocker; no permitted credential-free endpoint is available, so none is invented.
 2. Physical-device and long-playback evidence remain unavailable.
-3. Resolver completeness beyond bounded candidate safety and source filtering remains open.
+3. Provider production-quality retry/cancellation behavior was incomplete; this run addresses bounded retry for transient HTTP/network failures.
 ### P1
 Favorites/History/Resume, Downloads, Settings/Profiles and full reference parity remain open.
 ### P2
@@ -27,41 +27,22 @@ Dependency/license/accessibility/performance edge cases remain open.
 
 ## Work completed this run
 1. Re-read repository metadata, exact `main`, branches, open PR state, recent commits, provider/resolver/player/network code and tests.
-2. Confirmed run start `main`: `1f71aba7f30fd43432de832c79072adc342511ae`.
-3. Verified PR #39 exact head `346e7ac324c6fb29befeafab59634b531b71fb6a`.
-4. Verified Android CI run `35822607657` passed fully: Unit tests, Lint, Debug APK build, APK verification, artifact upload and emulator end-to-end smoke.
-5. Verified artifacts: `fasel-hd-debug-apk` 7,217,175 bytes, digest `sha256:5ce588e03fae29c7920406e929ec3f5032616b47e117038d36b91f7ddd699bde`; `runtime-smoke-reports` 86,678 bytes, digest `sha256:71b6457429ea71c591435593b2aae8a652571648ce40a3ac6f188e221cff0265`.
-6. Merged PR #39 with squash SHA `f94286692ca38454a9cb58c93be7caabb0af1998`.
-7. Hardened `ProviderGateway.sources()` to canonicalize every candidate through `SafeHttp.normalize()` before emission and deduplicate by canonical URI.
-8. Added JVM regression coverage for whitespace-variant duplicate sources and preserved unsafe-source rejection.
+2. Confirmed run start `main`: `876b3b2c8cde15cc1f30deeee70d868cad0133f1`.
+3. Added bounded provider transport retries with a configurable 1..3 attempt cap, default 2.
+4. Retries are limited to transient HTTP responses (408, 429, 5xx) and network failures; unsafe URLs, body-limit violations and decode/provider rejections remain non-retryable.
+5. Preserved coroutine cancellation by cancelling each in-flight OkHttp call.
+6. Added Android runtime regression coverage proving a 503 is retried once and a successful second response is returned.
 
 ## Acceptance criteria
-- Unsafe playback sources rejected at gateway boundary: CLOSED by CI `35822607657` and merge.
-- Equivalent normalized playback URIs collapse deterministically: CLOSED by CI `35822607657` and merge.
-- Existing provider gateway tests remain green: CLOSED by CI `35822607657`.
+- Retry count is bounded and configurable: IMPLEMENTED, pending exact-head CI.
+- Transient 503 recovery works without weakening SafeHttp: IMPLEMENTED, pending exact-head CI.
+- Unsafe URL/body-limit/decode rejection is not retried: IMPLEMENTED by control flow, pending CI coverage.
+- Cancellation still cancels active OkHttp call: preserved in implementation, pending CI.
 - Authorized concrete external provider/resolver E2E: OPEN.
 - Physical-device / long-playback: OPEN.
 
 ## Honest weighted completion (merged evidence only)
-| Area | Weight | Evidence-level completion |
-|---|---:|---:|
-| Build/Gradle/CI + valid Debug APK | 8% | 90% |
-| Architecture/domain/models/contracts | 8% | 75% |
-| Catalog/Home | 7% | 90% |
-| Search | 7% | 90% |
-| Details | 7% | 90% |
-| Seasons/Episodes | 7% | 90% |
-| Sources/provider/pagination | 8% | 92% |
-| Resolver | 7% | 62% |
-| Native Media3 Player + UI/lifecycle | 10% | 100% |
-| End-to-end Catalog/Search->Play integration | 10% | 90% |
-| Movies/Series/Anime/Streaming | 5% | 90% |
-| Favorites/History/Resume | 4% | 0% |
-| Downloads | 3% | 0% |
-| Settings/Profiles | 3% | 0% |
-| UI/navigation/Arabic-RTL/reference parity | 3% | 30% |
-| Runtime/device smoke + edge cases | 2% | 90% |
-| Security/privacy/licenses/dependencies | 1% | 95% |
+No completion credit is awarded for this run until exact-head CI passes and the change is merged.
 
 - **Overall Verified Product Completion: 77.2%**.
 - **Current P0 Path Completion: 88.8%**.
@@ -69,9 +50,8 @@ Dependency/license/accessibility/performance edge cases remain open.
 - **Beta Readiness: 79.2%** (not deliverable while authorized external E2E is absent).
 
 ## CI / artifacts
-- Android CI run: `35822607657`.
-- `fasel-hd-debug-apk`: 7,217,175 bytes; digest `sha256:5ce588e03fae29c7920406e929ec3f5032616b47e117038d36b91f7ddd699bde`.
-- `runtime-smoke-reports`: 86,678 bytes; digest `sha256:71b6457429ea71c591435593b2aae8a652571648ce40a3ac6f188e221cff0265`.
+- No exact-head CI run was available at the time of this handoff.
+- No new APK or runtime artifact is credited.
 - No GitHub Release exists.
 
 ## What still does not work
@@ -81,8 +61,8 @@ Dependency/license/accessibility/performance edge cases remain open.
 - Reference APK is not accessible in the connected Google Drive context; expected SHA remains unverified.
 
 ## Next run goals
-1. Re-read `main` at `f94286692ca38454a9cb58c93be7caabb0af1998` and confirm post-merge status.
-2. Preserve zero-open-PR state unless a higher-impact, independently verifiable blocker is selected.
-3. Continue deterministic provider/resolver evidence without inventing unauthorized external access.
-4. Recompute all four percentages from merged evidence only.
-5. If no safe, high-impact implementation slice remains, move into maintenance mode with regression protection and explicit blockers.
+1. Open the single PR from `recovery/provider-bounded-retry` once the exact branch head is verified.
+2. Inspect exact-head CI jobs, steps, logs, checks and artifacts; do not merge while pending.
+3. If green and mergeable, merge immediately and recompute percentages from merged evidence only.
+4. If CI fails, fix the root cause on the same branch and add regression coverage.
+5. Continue deterministic provider/resolver evidence without inventing unauthorized external access.
