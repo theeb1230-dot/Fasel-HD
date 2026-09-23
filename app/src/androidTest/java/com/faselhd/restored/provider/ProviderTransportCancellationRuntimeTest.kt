@@ -1,6 +1,7 @@
 package com.faselhd.restored.provider
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -26,7 +27,7 @@ class ProviderTransportCancellationRuntimeTest {
         val calls = TrackingCallFactory(entered)
         val transport = ProviderTransport(callFactory = calls)
 
-        val request: Job = launch {
+        val request: Job = launch(start = CoroutineStart.UNDISPATCHED) {
             transport.get("https://example.org/fixture")
         }
         assertTrue("request should enter OkHttp", entered.await(2, TimeUnit.SECONDS))
