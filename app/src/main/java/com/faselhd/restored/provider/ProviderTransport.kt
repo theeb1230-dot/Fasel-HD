@@ -31,6 +31,7 @@ class ProviderTransport(
     connectTimeoutSeconds: Long = 10,
     readTimeoutSeconds: Long = 15,
     private val maxResponseBytes: Long = DEFAULT_MAX_RESPONSE_BYTES,
+    private val maxAttempts: Int = DEFAULT_MAX_ATTEMPTS,
     private val client: OkHttpClient = OkHttpClient.Builder()
         .dns(SafeDns())
         .connectTimeout(connectTimeoutSeconds, TimeUnit.SECONDS)
@@ -43,12 +44,28 @@ class ProviderTransport(
 ) {
     init {
         require(maxResponseBytes > 0) { "maxResponseBytes must be positive" }
+        require(maxAttempts in 1..3) { "maxAttempts must be between 1 and 3" }
     }
 
     suspend fun get(url: String): TransportResult {
         val normalized = SafeHttp.normalize(url) ?: return TransportResult.Rejected("unsafe_url")
-        val request = Request.Builder().url(normalized).get().build()
-        return suspendCancellableCoroutine { continuation ->
+        var lastResult: TransportResult? = null
+        repeat(maxAttempts) { attempt ->
+            val result = getOnce(normalized)
+            lastResult = result
+            val retryable = when (result) {
+                is TransportResult.HttpError -> result.code == 408 || result.code == 429 || result.code >= 500
+                is TransportResult.NetworkError -> true
+                else -> false
+            }
+            if (!retryable || attempt == maxAttempts - 1) return result
+        }
+        return lastResult ?: TransportResult.NetworkError("transport_error")
+    }
+
+    private suspend fun getOnce(normalized: String): TransportResult =
+        suspendCancellableCoroutine { continuation ->
+            val request = Request.Builder().url(normalized).get().build()
             val call = callFactory.newCall(request)
             continuation.invokeOnCancellation { call.cancel() }
             call.enqueue(object : Callback {
@@ -72,7 +89,6 @@ class ProviderTransport(
                 }
             })
         }
-    }
 
     private fun readBoundedBody(response: Response): TransportResult {
         val body = response.body ?: return TransportResult.Success("", response.code)
@@ -84,5 +100,6 @@ class ProviderTransport(
 
     companion object {
         const val DEFAULT_MAX_RESPONSE_BYTES: Long = 2L * 1024L * 1024L
+        const val DEFAULT_MAX_ATTEMPTS: Int = 2
     }
 }
