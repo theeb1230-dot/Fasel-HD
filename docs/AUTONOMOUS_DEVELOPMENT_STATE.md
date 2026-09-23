@@ -5,9 +5,10 @@ Last updated: 2026-09-23
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
 - Exact `main` SHA at run start: `a17a7d4c00514d52e07d0ef31e6cae10d5d0cdfa`.
-- No PR was open at run start.
+- Exact `main` SHA after merge: `adecdf540ae20976dcbe2f12967a7930453d505a`.
+- PR #37 was the only open PR at run start; it is now merged. No PR is open after merge.
 - Working branch: `recovery/provider-source-dedup`.
-- Current working head: `bb183103d4a5da55381dfb1fab1b711cd0662b78`.
+- Exact PR head verified: `38badc1fe12c3dfdc84d568014dc5b2bee48d076`.
 - No GitHub Release exists.
 
 ## Reference APK
@@ -19,25 +20,27 @@ Last updated: 2026-09-23
 ### P0
 1. Authorized concrete external provider/resolver E2E remains the highest product blocker; no permitted credential-free endpoint is available, so none is invented.
 2. Physical-device and long-playback evidence remain unavailable.
-3. Resolver completeness beyond the bounded candidate safety slice remains open.
+3. Resolver completeness beyond bounded candidate safety and source filtering remains open.
 ### P1
 Favorites/History/Resume, Downloads, Settings/Profiles and full reference parity remain open.
 ### P2
 Dependency/license/accessibility/performance edge cases remain open.
 
 ## Work completed this run
-1. Re-read repository metadata, exact `main`, branches, open PR state, commits, handoff, provider/resolver/player/network code and tests.
-2. Confirmed `main` at start: `a17a7d4c00514d52e07d0ef31e6cae10d5d0cdfa`.
-3. Created one working branch only: `recovery/provider-source-dedup`.
-4. Hardened `ProviderGateway.sources()` to normalize blank episode IDs, fail closed through `SafeHttp`, and deduplicate repeated playback URIs after normalization.
-5. Added JVM regression coverage for unsafe-source removal, duplicate-source removal, and blank episode normalization.
-6. Updated this state file on the same branch. No completion credit is awarded before exact-head CI and merge.
+1. Re-read repository metadata, exact `main`, branches, open PR state, commits, Actions jobs/steps, artifacts, handoff, provider/resolver/player/network code and tests.
+2. Confirmed run start `main`: `a17a7d4c00514d52e07d0ef31e6cae10d5d0cdfa`.
+3. Verified PR #37 exact head: `38badc1fe12c3dfdc84d568014dc5b2bee48d076`.
+4. Verified Android CI run `35814738360` passed fully: Unit tests, Lint, Debug APK build, APK verification, artifact upload and emulator end-to-end smoke.
+5. Merged PR #37. Merge/squash commit: `adecdf540ae20976dcbe2f12967a7930453d505a`.
+6. Hardened `ProviderGateway.sources()` to normalize blank episode IDs, fail closed through `SafeHttp`, and deduplicate repeated playback URIs after normalization.
+7. Added JVM regression coverage for unsafe-source removal, duplicate-source removal, and blank episode normalization.
+8. Prepared this state update from the verified merged evidence.
 
 ## Acceptance criteria
-- Unsafe playback sources rejected at gateway boundary: CLOSED on existing main evidence.
-- Duplicate playback URIs removed deterministically: OPEN pending exact-head CI and merge.
-- Blank episode IDs normalized to null: OPEN pending exact-head CI and merge.
-- Existing provider gateway tests remain green: OPEN pending exact-head CI.
+- Unsafe playback sources rejected at gateway boundary: CLOSED.
+- Duplicate playback URIs removed deterministically: CLOSED after exact-head CI and merge.
+- Blank episode IDs normalized to null: CLOSED after exact-head CI and merge.
+- Existing provider gateway tests remain green: CLOSED by CI `35814738360`.
 - Authorized concrete external provider/resolver E2E: OPEN.
 - Physical-device / long-playback: OPEN.
 
@@ -62,14 +65,15 @@ Dependency/license/accessibility/performance edge cases remain open.
 | Runtime/device smoke + edge cases | 2% | 90% |
 | Security/privacy/licenses/dependencies | 1% | 95% |
 
-- **Overall Verified Product Completion: 77.5%** (unchanged until merge).
-- **Current P0 Path Completion: 88.0%** (unchanged until merge).
+- **Overall Verified Product Completion: 77.0%**.
+- **Current P0 Path Completion: 88.5%**.
 - **Runtime-Verified Completion: 57.0%**.
 - **Beta Readiness: 79.0%** (not deliverable while authorized external E2E is absent).
 
 ## CI / artifacts
-- No exact-head CI run was available yet for `bb183103d4a5da55381dfb1fab1b711cd0662b78` at handoff time.
-- No new APK or runtime artifact is credited.
+- Android CI run: `35814738360`.
+- `fasel-hd-debug-apk`: 7,217,151 bytes; digest `sha256:840b96d7b32a5b4b0a925d50dc4cbbc43e43a030677d336975369235931d0200`.
+- `runtime-smoke-reports`: 81,809 bytes; digest `sha256:3951d03057ea9cf6dc963f90c52ba77992249599b15a0c4c3466278b6f2a7395`.
 - No GitHub Release exists.
 
 ## What still does not work
@@ -79,8 +83,8 @@ Dependency/license/accessibility/performance edge cases remain open.
 - Reference APK is not accessible in the connected Google Drive context; expected SHA remains unverified.
 
 ## Next run goals
-1. Inspect exact-head CI for `bb183103d4a5da55381dfb1fab1b711cd0662b78`, including jobs, steps, logs and artifacts.
-2. If green and mergeable, merge the single PR immediately, then reread `main`.
-3. If failed, fix root cause on the same branch and add regression coverage.
-4. Recompute all four percentages only from verified merged evidence.
-5. Preserve the one-open-PR rule and keep unauthorized external provider access explicitly blocked.
+1. Re-read `main` and confirm post-merge CI/status for `adecdf540ae20976dcbe2f12967a7930453d505a`.
+2. Preserve the zero-open-PR state unless a higher-impact, independently verifiable blocker is selected.
+3. Continue deterministic provider/resolver evidence without inventing unauthorized external access.
+4. Recompute all four percentages from merged evidence only.
+5. If no safe, high-impact implementation slice remains, move into maintenance mode with regression protection and explicit blockers.
