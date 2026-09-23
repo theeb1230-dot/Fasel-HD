@@ -29,14 +29,19 @@ object SafeHttp {
         return isBlockedAddress(literal)
     }
 
-    private fun isBlockedAddress(address: InetAddress): Boolean =
-        address.isAnyLocalAddress ||
+    private fun isBlockedAddress(address: InetAddress): Boolean {
+        val raw = address.address
+        if (raw.size == 16 && isIpv4Mapped(raw)) {
+            return isBlockedIpv4(raw.copyOfRange(12, 16))
+        }
+        return address.isAnyLocalAddress ||
             address.isLoopbackAddress ||
             address.isLinkLocalAddress ||
             address.isSiteLocalAddress ||
             address.isMulticastAddress ||
-            isIpv4Reserved(address.address) ||
+            isIpv4Reserved(raw) ||
             isIpv6Reserved(address)
+    }
 
     private fun parseLiteralAddress(host: String): InetAddress? {
         val ipv4 = host.split('.')
@@ -47,20 +52,36 @@ object SafeHttp {
         return runCatching { InetAddress.getByName(host) }.getOrNull()
     }
 
-    private fun isIpv4Reserved(bytes: ByteArray): Boolean {
+    private fun isIpv4Mapped(bytes: ByteArray): Boolean =
+        bytes.size == 16 && bytes.copyOfRange(0, 10).all { it == 0.toByte() } &&
+            bytes[10] == 0xff.toByte() && bytes[11] == 0xff.toByte()
+
+    private fun isBlockedIpv4(bytes: ByteArray): Boolean =
+        isIpv4Special(bytes) ||
+            (bytes.size == 4 && (bytes[0].toInt() and 0xff) in 10..10)
+
+    private fun isIpv4Special(bytes: ByteArray): Boolean {
         if (bytes.size != 4) return false
         val a = bytes[0].toInt() and 0xff
         val b = bytes[1].toInt() and 0xff
         val c = bytes[2].toInt() and 0xff
         return a == 0 ||
+            a == 10 ||
             (a == 100 && b in 64..127) ||
+            a == 127 ||
+            (a == 169 && b == 254) ||
+            (a == 172 && b in 16..31) ||
             (a == 192 && b == 0 && c == 0) ||
             (a == 192 && b == 0 && c == 2) ||
+            (a == 192 && b == 88 && c == 99) ||
+            (a == 192 && b == 168) ||
             (a == 198 && b in 18..19) ||
             (a == 198 && b == 51 && c == 100) ||
             (a == 203 && b == 0 && c == 113) ||
             a >= 224
     }
+
+    private fun isIpv4Reserved(bytes: ByteArray): Boolean = isIpv4Special(bytes)
 
     private fun isIpv6Reserved(address: InetAddress): Boolean {
         if (address !is Inet6Address) return false
