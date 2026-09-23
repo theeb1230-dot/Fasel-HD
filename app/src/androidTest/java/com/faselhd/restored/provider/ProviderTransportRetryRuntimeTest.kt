@@ -47,4 +47,51 @@ class ProviderTransportRetryRuntimeTest {
         assertTrue(result is TransportResult.Success)
         assertEquals(2, attempts.get())
     }
+
+    @Test
+    fun unsafeUrlIsRejectedWithoutOpeningOrRetryingARequest() = runBlocking {
+        val attempts = AtomicInteger(0)
+        val client = OkHttpClient.Builder()
+            .addInterceptor {
+                attempts.incrementAndGet()
+                error("unsafe URL must never reach OkHttp")
+            }
+            .build()
+
+        val result = ProviderTransport(
+            client = client,
+            maxAttempts = 3,
+        ).get("javascript:alert(1)")
+
+        assertTrue(result is TransportResult.Rejected)
+        assertEquals("unsafe_url", (result as TransportResult.Rejected).reason)
+        assertEquals(0, attempts.get())
+    }
+
+    @Test
+    fun oversizedBodyIsRejectedWithoutRetryingTheSameResponse() = runBlocking {
+        val attempts = AtomicInteger(0)
+        val client = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                attempts.incrementAndGet()
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(200)
+                    .message("too-large")
+                    .body("123456789".toResponseBody())
+                    .build()
+            }
+            .build()
+
+        val result = ProviderTransport(
+            client = client,
+            maxResponseBytes = 4,
+            maxAttempts = 3,
+        ).get("https://example.org/fixture")
+
+        assertTrue(result is TransportResult.Rejected)
+        assertEquals("response_too_large", (result as TransportResult.Rejected).reason)
+        assertEquals(1, attempts.get())
+    }
 }
