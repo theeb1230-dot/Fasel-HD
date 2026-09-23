@@ -5,10 +5,8 @@ Last updated: 2026-09-23
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
 - Exact `main` SHA at run start: `df8db8e6d435138b811225d23c66806c77b708aa` after merging PR #43.
-- PR #43 was the only open PR at run start with exact head `0b75178c7b0526d68221c48f0dcf5ba58683db40`.
-- PR #43 passed Android CI run `35849508324` and was merged with squash SHA `df8db8e6d435138b811225d23c66806c77b708aa`.
-- Current implementation branch: `recovery/provider-cancellation-runtime-proof`.
-- Current work is limited to one implementation PR; no second implementation PR will be opened before the current PR closes.
+- PR #44 is the only open PR; current branch: `recovery/provider-cancellation-runtime-proof`.
+- Current implementation head after deterministic-test fix: `e5b3e27d2d6dbd27009bcce38590c85d1acaec0c`.
 - No GitHub Release exists.
 
 ## Reference APK
@@ -28,20 +26,18 @@ Dependency/license/accessibility/performance edge cases remain open.
 
 ## Work completed this run
 1. Re-read repository metadata, exact `main`, branches, open PR state, recent commits, provider/resolver/player/network code and tests.
-2. Confirmed run start `main`: `df8db8e6d435138b811225d23c66806c77b708aa` after merged PR #43.
-3. Verified PR #43 exact head `0b75178c7b0526d68221c48f0dcf5ba58683db40`.
-4. Verified Android CI run `35849508324`: Unit tests, Lint, Debug APK build, APK verification, artifact upload and emulator end-to-end smoke all passed.
-5. Verified artifacts: `fasel-hd-debug-apk` 7,218,346 bytes, digest `sha256:876f517f9d1fb8bb1d468809ee3f8367b5057fd0e2f8e8792c0ed269b0f41de4`; `runtime-smoke-reports` 92,499 bytes, digest `sha256:e849a130461a49f367f44b357ba60b885b48a1b79925083c2862c108e2358309`.
-6. Merged PR #43 with squash SHA `df8db8e6d435138b811225d23c66806c77b708aa`.
-7. Added Android runtime regression coverage that cancels an active OkHttp call when the coroutine is cancelled; the test uses an injected Call.Factory and asserts the underlying call receives `cancel()`.
-8. Exact-head CI run `35855246383` failed on the current PR merge ref before artifact creation; unit tests and lint passed, but Android-test compilation failed because the adapter used the wrong `Timeout` import and property-style `isExecuted`/`isCanceled` accessors.
-9. Fixed the root cause on the same implementation branch in commit `f69246fd22ff46cbd8a1d7a16d0713876794cc53`: import `okio.Timeout` and call `delegate.isExecuted()` / `delegate.isCanceled()`.
+2. Confirmed run start `main`: `df8db8e6d435138b811225d23c66806c77b708aa`.
+3. Verified PR #44 exact head before this run: `47182b6032b888abd4f6a3e6d65f43b77656f5e3`.
+4. Verified Android CI run `35860902063`: build job passed, but emulator runtime smoke failed in `ProviderTransportCancellationRuntimeTest` because the test depended on an interceptor path and did not deterministically enter OkHttp.
+5. Root failure evidence: `request should enter OkHttp`; build, unit tests, lint and APK verification still passed; runtime artifact was preserved but is not acceptance evidence.
+6. Reworked the same test on the same branch to use an injected deterministic `Call.Factory` and an in-memory `Call` whose `enqueue()` signals entry while `cancel()` records cancellation, removing network/DNS/emulator timing from the proof.
+7. New implementation commit: `e5b3e27d2d6dbd27009bcce38590c85d1acaec0c`.
 
 ## Acceptance criteria
 - Unsafe URL is rejected without opening or retrying a request: CLOSED by PR #42 and CI `35843617445`.
 - Oversized response body is rejected without retry: CLOSED by PR #42 and CI `35843617445`.
 - Bounded transient retry remains green after the negative tests: CLOSED by PR #42 and CI `35843617445`.
-- Cancellation still cancels active OkHttp call: IMPLEMENTED; exact-head CI previously reached the test source but failed compilation on adapter API usage; fixed on the same branch, pending a new exact-head CI and merge.
+- Cancellation reaches the active OkHttp call: IMPLEMENTED with deterministic injected Call.Factory; pending new exact-head CI and merge.
 - Authorized concrete external provider/resolver E2E: OPEN.
 - Physical-device / long-playback: OPEN.
 
@@ -53,10 +49,10 @@ Dependency/license/accessibility/performance edge cases remain open.
 
 ## CI / artifacts
 - PR #43 Android CI run: `35849508324`.
-- Current PR exact-head CI run: `35855246383` (failure; no APK artifact accepted).
-- Failed build root cause: `Unresolved reference 'Timeout'`; `isExecuted` and `isCanceled` require function invocation in the current OkHttp API.
-- Fix commit on the same branch: `f69246fd22ff46cbd8a1d7a16d0713876794cc53`.
-- No CI credit is assigned yet to the current implementation branch until its new exact-head workflow passes and the PR is merged.
+- Previous PR #44 exact-head CI run: `35860902063` (failure in runtime smoke only; no acceptance credit for cancellation proof).
+- Runtime artifact from failed run: `runtime-smoke-reports`, 94,010 bytes; digest `sha256:3c79ffc57763bcd12cf99220f1d7fa96f9aaf58fd2bfc490a2f19c77144a1c68`.
+- Current fix commit: `e5b3e27d2d6dbd27009bcce38590c85d1acaec0c`.
+- No CI credit is assigned to the current implementation branch until its new exact-head workflow passes and the PR is merged.
 - No GitHub Release exists.
 
 ## What still does not work
@@ -66,7 +62,7 @@ Dependency/license/accessibility/performance edge cases remain open.
 - Reference APK is not accessible in the connected Google Drive context; expected hash remains unverified.
 
 ## Next run goals
-1. Inspect the new exact-head CI for PR #44 after commit `f69246fd22ff46cbd8a1d7a16d0713876794cc53`.
+1. Inspect exact-head CI for PR #44 after commit `e5b3e27d2d6dbd27009bcce38590c85d1acaec0c`.
 2. If green and mergeable, merge PR #44 immediately and recompute percentages from merged evidence only.
 3. If CI fails again, fix the root cause on the same branch and add regression coverage; do not rerun blindly.
 4. Continue deterministic provider/resolver evidence without inventing unauthorized external access.
