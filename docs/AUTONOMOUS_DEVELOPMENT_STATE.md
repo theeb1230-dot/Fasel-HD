@@ -6,7 +6,7 @@ Last updated: 2026-09-23
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
 - Exact `main` SHA at run start: `df8db8e6d435138b811225d23c66806c77b708aa` after merging PR #43.
 - PR #44 is the only open PR; current branch: `recovery/provider-cancellation-runtime-proof`.
-- Current implementation head after deterministic-test fix: `e5b3e27d2d6dbd27009bcce38590c85d1acaec0c`.
+- Current implementation head after deterministic-test scheduling fix: `fbd0afb13bed5fb66a5563104c15168b653d3765`.
 - No GitHub Release exists.
 
 ## Reference APK
@@ -18,7 +18,7 @@ Last updated: 2026-09-23
 ### P0
 1. Authorized concrete external provider/resolver E2E remains the highest product blocker; no permitted credential-free endpoint is available, so none is invented.
 2. Physical-device and long-playback evidence remain unavailable.
-3. Dedicated cancellation runtime proof is the highest locally solvable provider-runtime slice.
+3. Dedicated cancellation runtime proof remains the highest locally solvable provider-runtime slice until the new exact-head CI passes.
 ### P1
 Favorites/History/Resume, Downloads, Settings/Profiles and full reference parity remain open.
 ### P2
@@ -27,17 +27,18 @@ Dependency/license/accessibility/performance edge cases remain open.
 ## Work completed this run
 1. Re-read repository metadata, exact `main`, branches, open PR state, recent commits, provider/resolver/player/network code and tests.
 2. Confirmed run start `main`: `df8db8e6d435138b811225d23c66806c77b708aa`.
-3. Verified PR #44 exact head before this run: `47182b6032b888abd4f6a3e6d65f43b77656f5e3`.
-4. Verified Android CI run `35860902063`: build job passed, but emulator runtime smoke failed in `ProviderTransportCancellationRuntimeTest` because the test depended on an interceptor path and did not deterministically enter OkHttp.
-5. Root failure evidence: `request should enter OkHttp`; build, unit tests, lint and APK verification still passed; runtime artifact was preserved but is not acceptance evidence.
-6. Reworked the same test on the same branch to use an injected deterministic `Call.Factory` and an in-memory `Call` whose `enqueue()` signals entry while `cancel()` records cancellation, removing network/DNS/emulator timing from the proof.
-7. New implementation commit: `e5b3e27d2d6dbd27009bcce38590c85d1acaec0c`.
+3. Verified PR #44 exact head and exact-head CI run `35868010803`.
+4. Build, unit tests, lint, APK build and APK verification passed; emulator runtime failed only in `ProviderTransportCancellationRuntimeTest` with `request should enter OkHttp`.
+5. Root cause: the coroutine test could be cancelled before the launched block deterministically reached `ProviderTransport.get()` on the emulator scheduler.
+6. Fixed the same test on the same branch by launching with `CoroutineStart.UNDISPATCHED`, which enters the cancellable transport path synchronously before the test waits and cancels.
+7. Implementation commit: `fbd0afb13bed5fb66a5563104c15168b653d3765`.
+8. Updated this handoff after the fix; no new exact-head workflow has appeared yet.
 
 ## Acceptance criteria
 - Unsafe URL is rejected without opening or retrying a request: CLOSED by PR #42 and CI `35843617445`.
 - Oversized response body is rejected without retry: CLOSED by PR #42 and CI `35843617445`.
 - Bounded transient retry remains green after the negative tests: CLOSED by PR #42 and CI `35843617445`.
-- Cancellation reaches the active OkHttp call: IMPLEMENTED with deterministic injected Call.Factory; pending new exact-head CI and merge.
+- Cancellation reaches the active OkHttp call: IMPLEMENTED with deterministic injected Call.Factory and deterministic coroutine start; pending new exact-head CI and merge.
 - Authorized concrete external provider/resolver E2E: OPEN.
 - Physical-device / long-playback: OPEN.
 
@@ -49,9 +50,9 @@ Dependency/license/accessibility/performance edge cases remain open.
 
 ## CI / artifacts
 - PR #43 Android CI run: `35849508324`.
-- Previous PR #44 exact-head CI run: `35860902063` (failure in runtime smoke only; no acceptance credit for cancellation proof).
-- Runtime artifact from failed run: `runtime-smoke-reports`, 94,010 bytes; digest `sha256:3c79ffc57763bcd12cf99220f1d7fa96f9aaf58fd2bfc490a2f19c77144a1c68`.
-- Current fix commit: `e5b3e27d2d6dbd27009bcce38590c85d1acaec0c`.
+- PR #44 exact-head Android CI run: `35868010803` (build job passed; runtime smoke failed only on the cancellation test).
+- Runtime artifact from failed run: `runtime-smoke-reports`, 99,567 uploaded bytes; digest `sha256:dc1312e458805cbf8170b7fc1a94cc771f0c496371ed91718aceaf93556f688d`.
+- Current fix commit: `fbd0afb13bed5fb66a5563104c15168b653d3765`.
 - No CI credit is assigned to the current implementation branch until its new exact-head workflow passes and the PR is merged.
 - No GitHub Release exists.
 
@@ -62,7 +63,7 @@ Dependency/license/accessibility/performance edge cases remain open.
 - Reference APK is not accessible in the connected Google Drive context; expected hash remains unverified.
 
 ## Next run goals
-1. Inspect exact-head CI for PR #44 after commit `e5b3e27d2d6dbd27009bcce38590c85d1acaec0c`.
+1. Inspect exact-head CI for PR #44 after commit `fbd0afb13bed5fb66a5563104c15168b653d3765`.
 2. If green and mergeable, merge PR #44 immediately and recompute percentages from merged evidence only.
 3. If CI fails again, fix the root cause on the same branch and add regression coverage; do not rerun blindly.
 4. Continue deterministic provider/resolver evidence without inventing unauthorized external access.
