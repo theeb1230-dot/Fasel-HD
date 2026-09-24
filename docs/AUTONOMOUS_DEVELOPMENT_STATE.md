@@ -6,11 +6,11 @@ Last updated: 2026-09-24
 - Default branch: `main`.
 - Exact `main` start SHA for this run: `14246aaa900a66cfa10a4242268e3328bfa63999`.
 - One open PR at start: #52 on `recovery/provider-empty-filter-proof`.
-- PR #52 current exact head after this run: `df6775f0e5ad312709b5d8e9d09bac8bff101411`.
+- PR #52 current exact head after this run: `29721626ceadab77d1ef595b251d9b457f52431c`.
 - No GitHub Release exists.
 
 ## Current work
-PR #52 continues the deterministic Android runtime proof that unsafe-only provider candidates collapse to an empty safe source set. This run added a regression candidate for `content://` in the unsafe-only set, alongside `javascript:`, `file:`, and loopback input. The test remains project-owned, credential-free, browser-free, and does not weaken SafeHttp or playback policy.
+PR #52 continues the deterministic Android runtime proof that unsafe-only provider candidates collapse to an empty safe source set. This run preserved the existing `content://` unsafe-only regression and added duplicate Native HLS input to the mixed-candidate case, proving ProviderGateway deduplicates surviving native sources while still dropping `javascript:`. The test remains project-owned, credential-free, browser-free, and does not weaken SafeHttp or playback policy.
 
 ## Blockers
 ### P0
@@ -27,6 +27,7 @@ Dependency/license/accessibility/performance edge cases and maintenance hardenin
 - The previously observed run `35975994130` failed in `runtime-smoke` because malformed escaped fixture JSON caused `ProviderLoadException: invalid_json` before source filtering.
 - Root-cause fix already landed on the same PR branch at `2f39275cb947ed9d0d346d2c4ddc77ad61478adb`.
 - No fresh workflow run is currently visible for the latest head; therefore no new completion credit is granted and no merge is performed.
+- Latest test commit: `29721626ceadab77d1ef595b251d9b457f52431c`.
 
 ## Honest weighted completion (merged evidence only)
 - Overall Verified Product Completion: 83.0%.
