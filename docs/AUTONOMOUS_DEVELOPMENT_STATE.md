@@ -3,77 +3,78 @@
 Last updated: 2026-09-24
 
 ## Repository truth
-- Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Exact `main` SHA at this run start: `0ad5b7ff5c488c7a6d85359c53b3402c6b19a2b3`.
-- No PR was open at run start; the previous PR #49 is merged.
-- Active branch: `recovery/player-background-return-runtime-proof`.
-- Active slice: deterministic background/return recovery proof for the native player error/retry surface.
-- No GitHub Release exists.
+- Default branch: `main`.
+- Exact `main` start SHA: `f9800c655ee4d10c827ed453185e743407cd96a7`.
+- PR #50 was the only open PR at start.
+- PR #50 head: `538c31f1673618ed0ad7223d8ab8ca269c3a2cb2`.
+- Exact-head Android CI: `35955908108` (success).
+- PR #50 squash merge: `e44abcff0b399ef82d936fab674b2be02d0db123`.
+- No PR remains open. No GitHub Release exists.
 
 ## Reference APK
-- Reference: `FaselhdV20.0.2.apk`.
-- Expected SHA-256: `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
-- Matching APK was not exposed by the connected Google Drive context; the hash remains independently unverified.
-- No endpoint, token, cookie, credential, signing secret, browser playback, DRM/paywall bypass, or access-control bypass material was recovered or introduced.
+- `FaselhdV20.0.2.apk`; expected SHA-256 `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
+- APK was not exposed by connected Google Drive; hash remains unverified.
+- No credentials, tokens, persistent cookies, signing secrets, external-browser playback, DRM/paywall bypass, or access-control bypass were recovered or introduced.
 
 ## Blockers
 ### P0
-1. Authorized concrete external provider/resolver E2E remains unavailable; no endpoint is invented.
-2. Physical-device smoke and long-playback evidence remain unavailable.
+1. No authorized concrete external provider/resolver E2E.
+2. No physical-device smoke or long-playback evidence.
 3. Full user-facing UI-to-Media3 runtime coverage remains incomplete.
-4. Background/return recovery proof is pending exact-head Android CI.
 ### P1
-Favorites/History/Resume, Downloads, Settings/Profiles and full reference parity remain open.
+Favorites/History/Resume, Downloads, Settings/Profiles, and full Arabic/RTL/reference parity remain open.
 ### P2
 Dependency/license/accessibility/performance edge cases and maintenance hardening remain open.
 
 ## Work completed this run
-1. Re-read live `main` SHA, repository metadata, open-PR inventory, current state document, recent commits, and current player implementation.
-2. Confirmed previous configuration-recreation proof is merged on `main` (`f9800c655ee4d10c827ed453185e743407cd96a7`, documented by `0ad5b7ff5c488c7a6d85359c53b3402c6b19a2b3`).
-3. Created one branch only: `recovery/player-background-return-runtime-proof`.
-4. Added deterministic emulator coverage that drives `PlayerActivity` through CREATED -> RESUMED and proves the error/retry surface remains visible and retryable after background return.
-5. The test uses only the project-owned invalid HTTPS loopback fixture `https://127.0.0.1:9/fasel-hd-invalid.m3u8`.
-6. No exact-head CI run or accepted artifact exists yet for this slice.
+- Re-read repo metadata, all branches, PR inventory, PR #50, exact-head run/jobs/steps/status/artifacts, current player code, and this state file.
+- Verified `build` and `runtime-smoke` succeeded on run `35955908108`.
+- Verified artifacts:
+  - APK: 7,218,490 bytes; SHA-256 `861ac1c7529cfee3c8ff157520b2291a994322377d2b3110d4f8135c6cd9d8dc`.
+  - Runtime reports: 104,796 bytes; SHA-256 `405c6ba012575c704ca368e0f5baad227ea7e8fd55ca5483071cd1debc940b1c`.
+- Closed background/return acceptance on emulator: CREATED -> RESUMED preserves visible, retryable error surface.
+- Squash-merged PR #50 as `e44abcff0b399ef82d936fab674b2be02d0db123`.
+- No second PR opened in this run.
 
-## Acceptance criteria
-- Unsafe URL rejection without request/retry: CLOSED by PR #42 / CI `35843617445`.
-- Oversized body rejection without retry: CLOSED by PR #42 / CI `35843617445`.
-- Bounded transient retry: CLOSED by PR #40 / CI `35832117760`.
-- Cancellation reaches active OkHttp call: CLOSED by PR #44 / CI `35875070110`.
-- All-media-type typed routing to native decision: CLOSED by PR #45 / CI `35889632381`.
-- Paginated catalog retains prior items and reaches second-item details -> native player: CLOSED by PR #46 / CI `35903380831`.
-- Player invalid-input error surface + retry interaction on emulator: CLOSED by PR #47 / CI `35938998526`.
-- Player lifecycle stop/resume/retry/back-release proof on emulator: CLOSED by PR #48 / CI `35943417256`.
-- Player configuration recreation/rotation recovery proof on emulator: CLOSED by PR #49 / CI `35947794268`.
-- Player background/return recovery proof on emulator: OPEN pending exact-head CI.
-- Authorized concrete external provider/resolver E2E: OPEN.
+## Acceptance
+- Unsafe URL rejection: CLOSED (PR #42 / CI `35843617445`).
+- Oversized body rejection: CLOSED (PR #42 / CI `35843617445`).
+- Bounded transient retry: CLOSED (PR #40 / CI `35832117760`).
+- Cancellation reaches OkHttp: CLOSED (PR #44 / CI `35875070110`).
+- All-media-type typed routing: CLOSED (PR #45 / CI `35889632381`).
+- Paginated catalog -> details -> native player: CLOSED (PR #46 / CI `35903380831`).
+- Player invalid-input error/retry: CLOSED (PR #47 / CI `35938998526`).
+- Player stop/resume/retry/back-release: CLOSED (PR #48 / CI `35943417256`).
+- Player configuration recreation/rotation: CLOSED (PR #49 / CI `35947794268`).
+- Player background/return recovery: CLOSED (PR #50 / CI `35955908108`).
+- Authorized external provider/resolver E2E: OPEN.
 - Physical-device / long-playback: OPEN.
-- Full UI-to-Media3 runtime coverage for every user-facing flow: OPEN.
+- Full UI-to-Media3 runtime coverage: OPEN.
 
 ## CI / artifacts
-- Latest merged accepted Android CI run: `35947794268`.
-- Latest accepted APK artifact digest: `b844dbc3628dce3351482475ac5d47389e23eb44fa768a7fa2c201c81affece5`.
-- Latest accepted runtime artifact digest: `9a87b531610e8dc1b36f595301aabfbf58575617e30a91602530ffde3c6855c4`.
-- No accepted artifact exists yet for the background/return slice.
+- Latest accepted run: `35955908108`.
+- `build`: success.
+- `runtime-smoke`: success.
+- Latest APK digest: `861ac1c7529cfee3c8ff157520b2291a994322377d2b3110d4f8135c6cd9d8dc`.
+- Latest runtime digest: `405c6ba012575c704ca368e0f5baad227ea7e8fd55ca5483071cd1debc940b1c`.
 - No GitHub Release exists.
 
 ## Honest weighted completion (merged evidence only)
-- Overall Verified Product Completion: 82.1%.
-- Current P0 Path Completion: 94.3%.
-- Runtime-Verified Completion: 70.0%.
-- Beta Readiness: 84.7% (not deliverable while authorized external E2E, device evidence, long-playback and broader UI-to-Media3 coverage are absent).
+- Overall Verified Product Completion: 82.6%.
+- Current P0 Path Completion: 94.8%.
+- Runtime-Verified Completion: 72.0%.
+- Beta Readiness: 85.1% (not deliverable while authorized external E2E, device evidence, long-playback, and broader UI-to-Media3 coverage are absent).
 
 ## What still does not work
-- No verified authorized concrete external provider/resolver runtime E2E path.
+- No verified authorized external provider/resolver runtime E2E.
 - No physical-device smoke or long-duration playback proof.
-- Full user-facing UI-to-Media3 runtime coverage remains incomplete.
-- Favorites/History/Resume, Downloads, Settings/Profiles and full Arabic/RTL/reference parity remain incomplete.
-- Reference APK remains inaccessible in the connected Google Drive context.
-- Background/return slice is not accepted until exact-head CI passes.
+- Full user-facing UI-to-Media3 runtime coverage incomplete.
+- Favorites/History/Resume, Downloads, Settings/Profiles, and full Arabic/RTL/reference parity incomplete.
+- Reference APK remains inaccessible in connected Google Drive.
 
 ## Next run goals
-1. Open exactly one PR from `recovery/player-background-return-runtime-proof`.
-2. Inspect exact-head Android CI jobs, steps, logs, checks and artifacts.
-3. If green and mergeable, merge immediately, re-read `main`, and recompute percentages from merged evidence only.
-4. If CI fails, fetch logs/artifacts, identify the root cause, and fix it on the same branch with regression coverage.
-5. Continue toward maintenance-only mode only after the remaining P0 runtime gates are actually closed.
+1. Start from exact `main` SHA `e44abcff0b399ef82d936fab674b2be02d0db123`.
+2. Select the highest remaining P0 slice and create at most one PR.
+3. Prefer deterministic UI-to-Media3 release/error/retry coverage while preserving SafeHttp fail-closed behavior.
+4. On CI failure, fetch logs/artifacts, identify root cause, and fix on the same branch with regression coverage.
+5. Do not enter maintenance-only mode until remaining P0 runtime gates are actually closed.
