@@ -6,8 +6,9 @@ Last updated: 2026-09-24
 - Default branch: `main`.
 - Exact `main` start SHA: `07a02dc51d819ed3b7c5c65dcffb2ac454af43fb`.
 - No PR was open at start.
-- New single active PR: provider native-source runtime guard.
-- Exact head after implementation/state update: `e6c1c3c9a9b1e08cfeb44d0d2bf42f3cf1dfcfdb` (to be re-read from GitHub after commit).
+- New single active PR: #51, provider native-source runtime guard.
+- Exact head after implementation/state update: `45dc33d448873d549bddac72d17a04f131fb003c`.
+- No exact-head workflow run was visible at the end of this run.
 - No GitHub Release exists.
 
 ## Reference APK
@@ -36,7 +37,8 @@ Dependency/license/accessibility/performance edge cases and maintenance hardenin
   - `ProviderGateway` exposes exactly one surviving native candidate;
   - no external endpoint, credential, cookie, browser playback, or bypass is introduced.
 - Implementation commit: `167e49a9001eb9d1d692bac7d15ac085cbf97c47`.
-- State-document update commit follows on the same branch.
+- State correction commit: `45dc33d448873d549bddac72d17a04f131fb003c`.
+- PR #51 opened with exact head `45dc33d448873d549bddac72d17a04f131fb003c`.
 
 ## Acceptance
 - Unsafe URL rejection: CLOSED (PR #42 / CI `35843617445`).
@@ -55,7 +57,7 @@ Dependency/license/accessibility/performance edge cases and maintenance hardenin
 - Full UI-to-Media3 runtime coverage: OPEN.
 
 ## CI / artifacts
-- No exact-head CI run or artifact is accepted yet for this branch.
+- No exact-head CI run or artifact is accepted yet for PR #51.
 - Prior accepted run on `main`: `35955908108`.
 - Prior accepted APK digest: `861ac1c7529cfee3c8ff157520b2291a994322377d2b3110d4f8135c6cd9d8dc`.
 - Prior accepted runtime digest: `405c6ba012575c704ca368e0f5baad227ea7e8fd55ca5483071cd1debc940b1c`.
@@ -66,7 +68,7 @@ Dependency/license/accessibility/performance edge cases and maintenance hardenin
 - Current P0 Path Completion: 94.8%.
 - Runtime-Verified Completion: 72.0%.
 - Beta Readiness: 85.1% (not deliverable while authorized external E2E, device evidence, long-playback, and broader UI-to-Media3 coverage are absent).
-- No percentage credit is added for this open branch until exact-head CI passes and the PR is merged.
+- No percentage credit is added for PR #51 until exact-head CI passes and the PR is merged.
 
 ## What still does not work
 - No verified authorized external provider/resolver runtime E2E.
@@ -76,8 +78,8 @@ Dependency/license/accessibility/performance edge cases and maintenance hardenin
 - Reference APK remains inaccessible in connected Google Drive.
 
 ## Next run goals
-1. Read the exact head of the single active PR and inspect its workflow runs, jobs, steps, logs, checks, and artifacts.
+1. Read PR #51 exact head `45dc33d448873d549bddac72d17a04f131fb003c` and inspect workflow runs, jobs, steps, logs, checks, and artifacts.
 2. If required checks are green and mergeable, merge immediately, re-read `main`, and recalculate from merged evidence only.
 3. If CI fails, fetch logs/artifacts, fix the root cause on the same branch, and add regression coverage.
-4. Do not open a second PR while this one is open.
+4. Do not open a second PR while PR #51 is open.
 5. Do not enter maintenance-only mode until remaining P0 runtime gates are actually closed.
