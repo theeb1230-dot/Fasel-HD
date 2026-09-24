@@ -4,44 +4,50 @@ Last updated: 2026-09-24
 
 ## Repository truth
 - Default branch: `main`.
-- Exact `main` start SHA for this run: `14246aaa900a66cfa10a4242268e3328bfa63999`.
-- One open PR at start: #52 on `recovery/provider-empty-filter-proof`.
-- PR #52 current exact head after this run: `8b971f8963a82ede6dbce4134a514c0f89102704`.
+- Exact `main` SHA at start/end of this run: `6a777b2b2889bcc24739ab33659fa239c5a155de`.
+- GitHub exposes 56 branches, including the active recovery branches and `main`.
+- One open PR: #52 on `recovery/provider-empty-filter-proof`.
+- PR #52 exact head: `44af2d85dc3ba307e861cec56c30679514114c38`.
+- PR #52 is open, non-draft, unmerged, and GitHub currently reports `mergeable: false`.
 - No GitHub Release exists.
 
 ## Current work
-PR #52 continues the deterministic Android runtime proof that unsafe-only provider candidates collapse to an empty safe source set. The branch preserves the `content://` unsafe-only regression and the mixed-candidate duplicate Native HLS case, proving ProviderGateway drops `javascript:` and deduplicates surviving native sources. The test remains project-owned, credential-free, browser-free, and does not weaken SafeHttp or playback policy.
+PR #52 contains deterministic Android runtime coverage for provider source safety. It proves that `javascript:`, `file:`, loopback, and `content://` candidates are rejected; mixed candidates retain only native HLS and deduplicate repeated native sources; unsafe-only candidates collapse to an empty safe source set. The fixture is project-owned, credential-free, browser-free, and does not weaken SafeHttp or playback policy.
 
 ## Blockers
 ### P0
 1. No authorized concrete external provider/resolver E2E.
 2. No physical-device smoke or long-playback evidence.
 3. Full user-facing UI-to-Media3 runtime coverage remains incomplete.
-4. PR #52 exact-head CI must pass before merge.
+4. PR #52 exact-head CI must appear and pass before merge.
 ### P1
 Favorites/History/Resume, Downloads, Settings/Profiles, and full Arabic/RTL/reference parity remain open.
 ### P2
 Dependency/license/accessibility/performance edge cases and maintenance hardening remain open.
 
 ## CI / evidence
-- The previously observed run `35975994130` failed in `runtime-smoke` because malformed escaped fixture JSON caused `ProviderLoadException: invalid_json` before source filtering.
-- Root-cause fix landed on the same PR branch at `2f39275cb947ed9d0d346d2c4ddc77ad61478adb`.
-- Latest test implementation commit: `29721626ceadab77d1ef595b251d9b457f52431c`.
-- No workflow run, status check, job, log, or artifact is visible for exact head `8b971f8963a82ede6dbce4134a514c0f89102704`; no completion credit is granted and no merge is performed.
+- Previously observed failing run: `35975994130`.
+- Root cause: malformed escaped fixture JSON caused `ProviderLoadException: invalid_json` before source filtering.
+- Root-cause fix landed on this PR branch at `2f39275cb947ed9d0d346d2c4ddc77ad61478adb`.
+- Latest test implementation commit observed in the PR diff: `29721626ceadab77d1ef595b251d9b457f52431c`.
+- No workflow run, job, step, log, check, or artifact is visible for exact head `44af2d85dc3ba307e861cec56c30679514114c38`.
+- No completion credit is granted for PR #52 and no merge is performed.
 
 ## Honest weighted completion (merged evidence only)
 - Overall Verified Product Completion: 83.0%.
 - Current P0 Path Completion: 95.2%.
 - Runtime-Verified Completion: 74.0%.
 - Beta Readiness: 85.6%.
-- No percentage credit is added for PR #52 until fresh exact-head CI passes and the PR is merged.
+- These percentages are unchanged because PR #52 has neither accepted exact-head CI nor a merge.
 
 ## Reference APK
 - `FaselhdV20.0.2.apk` expected SHA-256: `c06ab7a983414c831019a455f2002d0ea1841d9fb5a5efe95b099cec9439a712`.
 - APK was not exposed by connected Google Drive; hash remains unverified.
+- No credentials, tokens, persistent cookies, signing secrets, external-browser playback, DRM/paywall bypass, or access-control bypass were recovered or introduced.
 
 ## Next run goals
-1. Inspect PR #52 exact-head workflow runs, jobs, steps, logs, checks, and artifacts.
+1. Inspect PR #52 exact head `44af2d85dc3ba307e861cec56c30679514114c38` and fetch any workflow runs, jobs, steps, logs, checks, and artifacts.
 2. Merge only after required checks are green and GitHub reports mergeable.
-3. If CI fails, fix the root cause on the same branch and add regression coverage.
+3. If CI fails, fetch logs/artifacts, fix the root cause on the same branch, and add regression coverage.
 4. Do not open a second PR while #52 is open.
+5. Do not enter maintenance-only mode until remaining P0 runtime gates are actually closed.
