@@ -19,7 +19,7 @@ import org.junit.runner.RunWith
 class ProviderNativeSourceRuntimeGuardTest {
     @Test
     fun providerSourcesExposeOnlyNativePlaybackCandidates() = runBlocking {
-        val json = """{\"current_page\":1,\"next_page_url\":null,\"data\":[{\"id\":\"guarded-item\",\"title\":\"Guarded Item\"}]}"""
+        val json = """{"current_page":1,"next_page_url":null,"data":[{"id":"guarded-item","title":"Guarded Item"}]}"""
         val provider = ConfiguredContentProvider(
             pageLoader = ProviderPageLoader(ProviderTransport(client = OkHttpClient.Builder().addInterceptor { chain ->
                 Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200)
@@ -45,7 +45,7 @@ class ProviderNativeSourceRuntimeGuardTest {
 
     @Test
     fun providerSourcesReturnEmptyWhenAllCandidatesAreUnsafe() = runBlocking {
-        val json = """{\"current_page\":1,\"next_page_url\":null,\"data\":[{\"id\":\"unsafe-only\",\"title\":\"Unsafe Only\"}]}"""
+        val json = """{"current_page":1,"next_page_url":null,"data":[{"id":"unsafe-only","title":"Unsafe Only"}]}"""
         val provider = ConfiguredContentProvider(
             pageLoader = ProviderPageLoader(ProviderTransport(client = OkHttpClient.Builder().addInterceptor { chain ->
                 Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200)
