@@ -5,10 +5,10 @@ Last updated: 2026-09-24
 ## Repository truth
 - Default branch: `main`.
 - Exact `main` start SHA: `07a02dc51d819ed3b7c5c65dcffb2ac454af43fb`.
-- No PR was open at start.
-- New single active PR: #51, provider native-source runtime guard.
-- Exact head after implementation/state update: `45dc33d448873d549bddac72d17a04f131fb003c`.
-- No exact-head workflow run was visible at the end of this run.
+- Exact `main` end SHA after this run: `14246aaa900a66cfa10a4242268e3328bfa63999`.
+- PR #51 was the only open PR at start; it is now merged.
+- Active PR after this run: #52, unsafe-only provider candidate collapse.
+- PR #52 exact head: `bfa8124339c211c9db12fff7ed1bfcbbe3689e47`.
 - No GitHub Release exists.
 
 ## Reference APK
@@ -27,18 +27,13 @@ Favorites/History/Resume, Downloads, Settings/Profiles, and full Arabic/RTL/refe
 Dependency/license/accessibility/performance edge cases and maintenance hardening remain open.
 
 ## Work completed this run
-- Re-read repo metadata, all branches, open-PR inventory, exact `main` SHA, current state file, provider runtime tests, player code, and CI configuration.
-- Selected the highest safe local P0 slice: provider runtime source filtering must prove that non-native `javascript:` inputs do not reach playback candidates while a native HLS candidate survives.
-- Created branch `recovery/provider-native-source-runtime-guard` from exact `main` `07a02dc51d819ed3b7c5c65dcffb2ac454af43fb`.
-- Added `ProviderNativeSourceRuntimeGuardTest.kt` with an owned deterministic transport fixture.
-- Test acceptance:
-  - typed provider search returns one item;
-  - source loading includes one `javascript:` negative candidate and one native HLS candidate;
-  - `ProviderGateway` exposes exactly one surviving native candidate;
-  - no external endpoint, credential, cookie, browser playback, or bypass is introduced.
-- Implementation commit: `167e49a9001eb9d1d692bac7d15ac085cbf97c47`.
-- State correction commit: `45dc33d448873d549bddac72d17a04f131fb003c`.
-- PR #51 opened with exact head `45dc33d448873d549bddac72d17a04f131fb003c`.
+- Re-read live repository metadata, default branch, PR inventory, exact main SHA, branches, state document, provider/player code, and Android CI evidence.
+- Verified PR #51 exact head `29e5ecd03ca93924e9a65da623d8cebba1300a86` had successful exact-head Android CI run `35965094563`.
+- Merged PR #51 by squash into `main` at `14246aaa900a66cfa10a4242268e3328bfa63999`.
+- Closed acceptance: Android runtime proves mixed provider candidates retain only native HLS while dropping `javascript:`.
+- Created PR #52 from exact merged `main`.
+- Added Android runtime regression coverage proving `javascript:`, `file:`, and loopback-only candidates collapse to an empty safe source set.
+- PR #52 implementation commit: `bfa8124339c211c9db12fff7ed1bfcbbe3689e47`.
 
 ## Acceptance
 - Unsafe URL rejection: CLOSED (PR #42 / CI `35843617445`).
@@ -51,24 +46,25 @@ Dependency/license/accessibility/performance edge cases and maintenance hardenin
 - Player stop/resume/retry/back-release: CLOSED (PR #48 / CI `35943417256`).
 - Player configuration recreation/rotation: CLOSED (PR #49 / CI `35947794268`).
 - Player background/return recovery: CLOSED (PR #50 / CI `35955908108`).
-- Native/non-native provider source guard: IMPLEMENTED, pending exact-head CI and merge.
+- Native/non-native provider source guard: CLOSED (PR #51 / CI `35965094563`, merged `14246aaa900a66cfa10a4242268e3328bfa63999`).
+- Unsafe-only provider source collapse: IMPLEMENTED in PR #52, pending exact-head CI and merge.
 - Authorized external provider/resolver E2E: OPEN.
 - Physical-device / long-playback: OPEN.
 - Full UI-to-Media3 runtime coverage: OPEN.
 
 ## CI / artifacts
-- No exact-head CI run or artifact is accepted yet for PR #51.
-- Prior accepted run on `main`: `35955908108`.
-- Prior accepted APK digest: `861ac1c7529cfee3c8ff157520b2291a994322377d2b3110d4f8135c6cd9d8dc`.
-- Prior accepted runtime digest: `405c6ba012575c704ca368e0f5baad227ea7e8fd55ca5483071cd1debc940b1c`.
+- Accepted PR #51 exact-head run: `35965094563`.
+- Accepted APK SHA-256: `9f7739092eedb58355c8db2ab21ee11f35ffedfa5bf7c5a150d2aec98ac9d301`.
+- Accepted runtime-report SHA-256: `9dd26388272d56e9a7cf9df91c3dc561005c57f4990216b6b2fd706e2b223d85`.
+- PR #52 has no accepted exact-head CI or artifact yet.
 - No GitHub Release exists.
 
 ## Honest weighted completion (merged evidence only)
-- Overall Verified Product Completion: 82.6%.
-- Current P0 Path Completion: 94.8%.
-- Runtime-Verified Completion: 72.0%.
-- Beta Readiness: 85.1% (not deliverable while authorized external E2E, device evidence, long-playback, and broader UI-to-Media3 coverage are absent).
-- No percentage credit is added for PR #51 until exact-head CI passes and the PR is merged.
+- Overall Verified Product Completion: 83.0%.
+- Current P0 Path Completion: 95.2%.
+- Runtime-Verified Completion: 74.0%.
+- Beta Readiness: 85.6% (not deliverable while authorized external E2E, device evidence, long-playback, and broader UI-to-Media3 coverage are absent).
+- The increase from the prior run is limited to the merged native/non-native provider runtime guard; no credit is added for PR #52 until exact-head CI passes and it is merged.
 
 ## What still does not work
 - No verified authorized external provider/resolver runtime E2E.
@@ -78,8 +74,8 @@ Dependency/license/accessibility/performance edge cases and maintenance hardenin
 - Reference APK remains inaccessible in connected Google Drive.
 
 ## Next run goals
-1. Read PR #51 exact head `45dc33d448873d549bddac72d17a04f131fb003c` and inspect workflow runs, jobs, steps, logs, checks, and artifacts.
+1. Read PR #52 exact head `bfa8124339c211c9db12fff7ed1bfcbbe3689e47` and inspect workflow runs, jobs, steps, logs, checks, and artifacts.
 2. If required checks are green and mergeable, merge immediately, re-read `main`, and recalculate from merged evidence only.
 3. If CI fails, fetch logs/artifacts, fix the root cause on the same branch, and add regression coverage.
-4. Do not open a second PR while PR #51 is open.
+4. Do not open a second PR while PR #52 is open.
 5. Do not enter maintenance-only mode until remaining P0 runtime gates are actually closed.
