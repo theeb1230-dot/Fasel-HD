@@ -6,7 +6,8 @@ Last updated: 2026-09-24
 - Default branch: `main`.
 - Exact `main` SHA at this run start/end: `6a777b2b2889bcc24739ab33659fa239c5a155de`.
 - One open PR: #52 on `recovery/provider-empty-filter-proof`.
-- PR #52 exact head at this run start/end: `f198a078f386d00062be32778f5690c06755a9d8`.
+- PR #52 exact head at this run start: `e802c278bd2c7f7e53ccb9fa699f13a2e4c83060`.
+- This state update is the only commit made in this run; final PR #52 head is recorded by GitHub after commit creation.
 - PR #52 is open, non-draft, unmerged, and GitHub reports `mergeable: false`.
 - No GitHub Release exists.
 
@@ -25,20 +26,19 @@ Dependency/license/accessibility/performance edge cases and maintenance hardenin
 PR #52 contains deterministic Android runtime coverage for provider source safety. It proves that `javascript:`, `file:`, loopback, and `content://` candidates are rejected; mixed candidates retain only native HLS and deduplicate repeated native sources; unsafe-only candidates collapse to an empty safe source set. The fixture is project-owned, credential-free, browser-free, and does not weaken SafeHttp or playback policy.
 
 ## Work completed this run
-- Re-read repository metadata, default branch, PR #52 metadata, exact PR head, state file, workflow configuration, recent Actions runs, and current commit workflow runs.
+- Re-read repository metadata, default branch, PR #52 metadata, exact PR head, state file, changed files, recent Actions evidence, and current commit workflow runs.
 - Verified exact `main` SHA `6a777b2b2889bcc24739ab33659fa239c5a155de`.
-- Verified exact PR #52 head `f198a078f386d00062be32778f5690c06755a9d8`.
-- Verified the most recent successful provider-guard run was `35982061035` for earlier head `2f39275cb947ed9d0d346d2c4ddc77ad61478adb`; it is not valid exact-head evidence for the current head.
-- Verified no workflow run, job, step, log, check, status, or artifact exists for current exact head `f198a078f386d00062be32778f5690c06755a9d8`.
+- Verified exact PR #52 head at run start `e802c278bd2c7f7e53ccb9fa699f13a2e4c83060`.
+- Verified PR #52 changes only the Android runtime guard test and this state document.
+- Verified no workflow run exists for current exact head, and therefore no current-head jobs, steps, logs, checks, statuses, or artifacts exist.
 - Updated this state file to correct the stale handoff and preserve the current GitHub truth.
 - No completion credit granted and no merge performed.
 
 ## CI / evidence
-- Successful earlier run: `35982061035` (`success`) on head `2f39275cb947ed9d0d346d2c4ddc77ad61478adb`.
-- That run cannot be transferred to current head `f198a078f386d00062be32778f5690c06755a9d8`.
-- Prior known failing run: `35975994130`; root cause was malformed escaped fixture JSON causing `ProviderLoadException: invalid_json` before source filtering.
-- Root-cause fix landed on this PR branch at `2f39275cb947ed9d0d346d2c4ddc77ad61478adb`.
+- No accepted exact-head CI exists for the current PR #52 head at run start.
 - No current-head artifact or runtime report is accepted.
+- Prior known failing run `35975994130` had malformed escaped fixture JSON causing `ProviderLoadException: invalid_json` before source filtering.
+- The fixture root-cause fix remains on this PR branch at `2f39275cb947ed9d0d346d2c4ddc77ad61478adb`.
 
 ## Honest weighted completion (merged evidence only)
 - Overall Verified Product Completion: 83.0%.
@@ -60,8 +60,8 @@ PR #52 contains deterministic Android runtime coverage for provider source safet
 - Reference APK remains inaccessible in connected Google Drive.
 
 ## Next run goals
-1. Re-read PR #52 exact head `f198a078f386d00062be32778f5690c06755a9d8` and fetch any fresh workflow run, jobs, steps, logs, checks, statuses, and artifacts.
-2. Merge only after required checks are green on this exact head and GitHub reports mergeable.
+1. Re-read PR #52 exact head after this state update and fetch any fresh workflow run, jobs, steps, logs, checks, statuses, and artifacts.
+2. Merge only after required checks are green on the exact current head and GitHub reports mergeable.
 3. If CI fails, fetch logs/artifacts, fix the root cause on the same branch, and add regression coverage.
 4. Do not open a second PR while #52 is open.
 5. Do not enter maintenance-only mode until the remaining P0 runtime gates are actually closed.
