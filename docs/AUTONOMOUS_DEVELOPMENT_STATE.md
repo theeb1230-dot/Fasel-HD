@@ -4,12 +4,10 @@ Last updated: 2026-09-24
 
 ## Repository truth
 - Repository: `theeb1230-dot/Fasel-HD`; default branch `main`.
-- Exact `main` SHA at run start: `947110b93a3920d684857efaf588db80fdc341c8`.
-- PR #47 was the only open PR at run start.
-- PR #47 exact head verified before merge: `8620f5d71c4825952a2a2df67601bbd0018a89e7`.
-- PR #47 was squash-merged as `c8009680c19b5ce2757f6c0378ebac162df53483`.
-- Exact `main` SHA after merge: `c8009680c19b5ce2757f6c0378ebac162df53483`.
-- No open PR remains after the merge.
+- Exact `main` SHA at this run start: `c8009680c19b5ce2757f6c0378ebac162df53483`.
+- No PR was open when this slice started.
+- Active branch: `recovery/player-lifecycle-runtime-proof`.
+- This slice currently has no accepted CI evidence and no merged completion credit.
 - No GitHub Release exists.
 
 ## Reference APK
@@ -23,21 +21,17 @@ Last updated: 2026-09-24
 1. Authorized concrete external provider/resolver E2E remains unavailable; no endpoint is invented.
 2. Physical-device smoke and long-playback evidence remain unavailable.
 3. Full user-facing UI-to-Media3 runtime coverage remains incomplete.
+4. Deterministic lifecycle proof for stop/resume/back/release is pending exact-head Android CI.
 ### P1
 Favorites/History/Resume, Downloads, Settings/Profiles and full reference parity remain open.
 ### P2
 Dependency/license/accessibility/performance edge cases and maintenance hardening remain open.
 
 ## Work completed this run
-1. Re-read repository metadata, default branch, current `main`, open PR inventory, PR #47 metadata, changed files, PlayerActivity, runtime test, workflow configuration, and exact-head Actions evidence.
-2. Verified PR #47 exact-head Android CI run `35938998526` completed successfully.
-3. Verified `build` and `runtime-smoke` jobs both succeeded, including Unit tests, Lint, Debug APK verification, emulator end-to-end smoke, and runtime report preservation.
-4. Verified artifacts for exact head:
-   - `fasel-hd-debug-apk`: 7,218,485 bytes; SHA-256 `dd382508e6367cfb51ecb4bd2898916bb4421d4a18d4abc5e0bb59bdf42b6d91`.
-   - `runtime-smoke-reports`: 110,722 bytes; SHA-256 `bb32d14335bef5779e6b4b889ea36738694830db6c3739d743416bdbe475d3c6`.
-5. Confirmed acceptance: invalid playback input shows a non-empty Arabic error surface, exposes Retry, and Retry preserves the recovery surface on emulator.
-6. Squash-merged PR #47 as `c8009680c19b5ce2757f6c0378ebac162df53483`.
-7. Updated this state document on `main` after the merge.
+1. Re-read current `main`, confirmed PR inventory was empty, and selected the highest locally provable P0 slice: player lifecycle/release coverage.
+2. Replaced the lifecycle runtime test's external Shaka demo URL with a deterministic project-owned invalid HTTPS loopback input.
+3. Added runtime assertions that the error/retry surface survives stop/resume, Retry preserves the recovery surface, and Back destroys the activity cleanly.
+4. No credentials, external provider endpoint, cookies, browser playback, DRM/paywall bypass, or security weakening was introduced.
 
 ## Acceptance criteria
 - Unsafe URL rejection without request/retry: CLOSED by PR #42 / CI `35843617445`.
@@ -47,16 +41,16 @@ Dependency/license/accessibility/performance edge cases and maintenance hardenin
 - All-media-type typed routing to native decision: CLOSED by PR #45 / CI `35889632381`.
 - Paginated catalog retains prior items and reaches second-item details -> native player: CLOSED by PR #46 / CI `35903380831`.
 - Player invalid-input error surface + retry interaction on emulator: CLOSED by PR #47 / CI `35938998526`.
+- Player lifecycle stop/resume/retry/back-release proof on emulator: OPEN pending this branch's exact-head CI.
 - Authorized concrete external provider/resolver E2E: OPEN.
 - Physical-device / long-playback: OPEN.
 - Full UI-to-Media3 runtime coverage for every user-facing flow: OPEN.
 
 ## CI / artifacts
-- Exact-head Android CI run: `35938998526`.
-- `build`: success.
-- `runtime-smoke`: success.
+- Latest merged accepted Android CI run: `35938998526`.
 - Latest accepted APK artifact digest: `dd382508e6367cfb51ecb4bd2898916bb4421d4a18d4abc5e0bb59bdf42b6d91`.
 - Latest accepted runtime artifact digest: `bb32d14335bef5779e6b4b889ea36738694830db6c3739d743416bdbe475d3c6`.
+- No accepted artifact exists for this lifecycle slice yet.
 - No GitHub Release exists.
 
 ## Honest weighted completion (merged evidence only)
@@ -71,12 +65,10 @@ Dependency/license/accessibility/performance edge cases and maintenance hardenin
 - Full user-facing UI-to-Media3 runtime coverage remains incomplete.
 - Favorites/History/Resume, Downloads, Settings/Profiles and full Arabic/RTL/reference parity remain incomplete.
 - Reference APK remains inaccessible in the connected Google Drive context.
-- No workflow run is visible for the squash merge commit itself; the accepted exact-head evidence is the PR run `35938998526`.
 
 ## Next run goals
-1. Start from exact `main` SHA `c8009680c19b5ce2757f6c0378ebac162df53483`.
-2. Open one PR only for the next highest-impact P0 slice.
-3. Prioritize deterministic lifecycle coverage for pause/resume/back/background/release and error recovery without inventing external endpoints.
-4. Inspect exact-head CI jobs, steps, logs, checks and artifacts before merge.
-5. Recompute percentages only from merged evidence.
-6. Do not enter maintenance-only mode until the remaining P0 runtime gates are actually closed.
+1. Open one PR for this lifecycle slice only.
+2. Inspect exact-head CI jobs, steps, logs, checks and artifacts before merge.
+3. If green and mergeable, merge immediately, re-read `main`, and recompute percentages from merged evidence only.
+4. If CI fails, fetch logs/artifacts, identify the root cause, and fix it on this same branch with regression coverage.
+5. Continue toward maintenance-only mode only after the remaining P0 runtime gates are actually closed.
