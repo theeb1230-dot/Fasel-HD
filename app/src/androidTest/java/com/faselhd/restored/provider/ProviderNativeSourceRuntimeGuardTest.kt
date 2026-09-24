@@ -31,6 +31,7 @@ class ProviderNativeSourceRuntimeGuardTest {
             sourcesLoader = { _, _ ->
                 listOf(
                     PlaybackClassifier.classify("javascript:alert(1)"),
+                    PlaybackClassifier.classify("https://example.org/native.m3u8"),
                     PlaybackClassifier.classify("https://example.org/native.m3u8")
                 )
             }
@@ -39,7 +40,7 @@ class ProviderNativeSourceRuntimeGuardTest {
         val item = provider.search("guarded", MediaType.MOVIE, 1).items.single()
         val sources = ProviderGateway(provider).sources(item.id, null)
 
-        assertEquals("only one source may survive provider filtering", 1, sources.size)
+        assertEquals("only one deduplicated native source may survive provider filtering", 1, sources.size)
         assertTrue("the surviving source must be native", sources.single().uri.endsWith("native.m3u8"))
     }
 
