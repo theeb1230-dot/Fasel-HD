@@ -58,7 +58,8 @@ class ProviderNativeSourceRuntimeGuardTest {
                 listOf(
                     PlaybackClassifier.classify("javascript:alert(1)"),
                     PlaybackClassifier.classify("file:///sdcard/unsafe.mp4"),
-                    PlaybackClassifier.classify("http://127.0.0.1:9/loopback.m3u8")
+                    PlaybackClassifier.classify("http://127.0.0.1:9/loopback.m3u8"),
+                    PlaybackClassifier.classify("content://media/external/video/media/1")
                 )
             }
         )
