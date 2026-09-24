@@ -19,7 +19,7 @@ import org.junit.runner.RunWith
 class ProviderNativeSourceRuntimeGuardTest {
     @Test
     fun providerSourcesExposeOnlyNativePlaybackCandidates() = runBlocking {
-        val json = """{"current_page":1,"next_page_url":null,"data":[{"id":"guarded-item","title":"Guarded Item"}]}"""
+        val json = """{\"current_page\":1,\"next_page_url\":null,\"data\":[{\"id\":\"guarded-item\",\"title\":\"Guarded Item\"}]}"""
         val provider = ConfiguredContentProvider(
             pageLoader = ProviderPageLoader(ProviderTransport(client = OkHttpClient.Builder().addInterceptor { chain ->
                 Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200)
@@ -41,5 +41,31 @@ class ProviderNativeSourceRuntimeGuardTest {
 
         assertEquals("only one source may survive provider filtering", 1, sources.size)
         assertTrue("the surviving source must be native", sources.single().uri.endsWith("native.m3u8"))
+    }
+
+    @Test
+    fun providerSourcesReturnEmptyWhenAllCandidatesAreUnsafe() = runBlocking {
+        val json = """{\"current_page\":1,\"next_page_url\":null,\"data\":[{\"id\":\"unsafe-only\",\"title\":\"Unsafe Only\"}]}"""
+        val provider = ConfiguredContentProvider(
+            pageLoader = ProviderPageLoader(ProviderTransport(client = OkHttpClient.Builder().addInterceptor { chain ->
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1).code(200)
+                    .message("owned fixture").body(json.toResponseBody()).build()
+            }.build())),
+            catalogUrl = { type, page -> "https://example.org/catalog/${type.name.lowercase()}?page=$page" },
+            searchUrl = { query, type, page -> "https://example.org/search/${type.name.lowercase()}?q=$query&page=$page" },
+            detailsLoader = { id, type -> MediaDetails(MediaSummary(id, "Unsafe Only", type)) },
+            sourcesLoader = { _, _ ->
+                listOf(
+                    PlaybackClassifier.classify("javascript:alert(1)"),
+                    PlaybackClassifier.classify("file:///sdcard/unsafe.mp4"),
+                    PlaybackClassifier.classify("http://127.0.0.1:9/loopback.m3u8")
+                )
+            }
+        )
+
+        val item = provider.search("unsafe", MediaType.MOVIE, 1).items.single()
+        val sources = ProviderGateway(provider).sources(item.id, null)
+
+        assertTrue("unsafe-only candidates must not reach playback", sources.isEmpty())
     }
 }
